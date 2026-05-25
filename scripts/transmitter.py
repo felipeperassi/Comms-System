@@ -1,6 +1,6 @@
 import numpy as np
 
-def appearence_probs(text, display_counts=False, display_probas=False): # we could use counter instead 
+def appearence_probs(text, display_counts=False, display_probas=False) -> dict: # we could use counter instead 
   """
   Calculates the appearance probability of each character in a string.
 
@@ -48,7 +48,7 @@ def appearence_probs(text, display_counts=False, display_probas=False): # we cou
 
   return probs_dict
 
-def entropy(probs_dict):
+def entropy(probs_dict) -> float:
     """
     Calculates the entropy of a source given its probability distribution.
 
@@ -60,7 +60,7 @@ def entropy(probs_dict):
     """
     return np.sum([-prob * np.log2(prob) for prob in probs_dict.values()])
 
-def huffman_algorithm(probs_dict):
+def huffman_algorithm(probs_dict) -> dict:
     """
     Calculates the Huffman binary code for each symbol in the given probability dictionary.
 
@@ -99,7 +99,7 @@ def huffman_algorithm(probs_dict):
 # for symbol, code in codes.items():
 #     print(f"{symbol}: {code}")
 
-def mean_length(code_dict, probs_dict):
+def mean_length(code_dict, probs_dict) -> float:
     """
     Calculates the mean code length of a Huffman code.
     
@@ -112,7 +112,7 @@ def mean_length(code_dict, probs_dict):
     """
     return sum(probs_dict[sym] * len(code) for sym, code in code_dict.items())
 
-def minimum_length(code_dict):
+def minimum_length(code_dict) -> int:
     """
     Calculates the minimum code length of a Huffman code.
     
@@ -124,7 +124,7 @@ def minimum_length(code_dict):
     """
     return min(len(code) for code in code_dict.values())
 
-def shannon_range(entropy_value, m=2):
+def shannon_range(entropy_value, m=2) -> tuple:
     """
     Calculates the Shannon range for a given entropy value.
     
@@ -137,7 +137,7 @@ def shannon_range(entropy_value, m=2):
     """
     return (entropy_value / np.log2(m), (entropy_value / np.log2(m)) + 1)
 
-def codificate_text(text, code_dict):
+def codificate_text(text, code_dict) -> list:
     """
     Codifies a text using the provided code dictionary.
     
