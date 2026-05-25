@@ -1,11 +1,11 @@
 import numpy as np
 
-def appearence_probs(data, display_counts=False, display_probas=False): # we could use counter instead 
+def appearence_probs(text, display_counts=False, display_probas=False): # we could use counter instead 
   """
   Calculates the appearance probability of each character in a string.
 
     Parameters:
-        data: str, the text to be processed
+        text: str, the text to be processed
         display_counts: bool, if True prints the character counts
         display_probas: bool, if True prints the character probabilities
 
@@ -14,7 +14,7 @@ def appearence_probs(data, display_counts=False, display_probas=False): # we cou
   """
 
   char_counts_dict = { }
-  for char in data:
+  for char in text:
       char_counts_dict[char] = char_counts_dict.get(char, 0) + 1
     
   # Optionally, sort the counts for better readability
@@ -32,7 +32,7 @@ def appearence_probs(data, display_counts=False, display_probas=False): # we cou
             print(f"'{char}': {count}")
 
   probs_dict = {}
-  total_chars = len(data)
+  total_chars = len(text)
   for char, count in sorted_char_counts.items():
       probs_dict[char] = count / total_chars
 
@@ -136,6 +136,20 @@ def shannon_range(entropy_value, m=2):
         tuple: (lower_bound, upper_bound)
     """
     return (entropy_value / np.log2(m), (entropy_value / np.log2(m)) + 1)
+
+def codificate_text(text, code_dict):
+    """
+    Codifies a text using the provided code dictionary.
+    
+    Parameters:
+        text: str, the text to be codified
+        code_dict: dict {symbol: code}
+    
+    Returns:
+        list: the codified binary codes for each character in the text
+    """
+    return [code_dict[char] for char in text]
+
 
 # ---- Earlier version of huffman_algorithm ----
 
