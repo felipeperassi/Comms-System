@@ -23,7 +23,7 @@ def print_dict(dict, title=None, sort=False) -> None:
         print(f"  {repr(key)}: {value}")
     print("-" * 30 + "\n")
 
-def main():
+def tp1():
     with open(PATH, 'r') as f:
         text = f.read()
     
@@ -61,4 +61,4 @@ def main():
           f"Decoded sentence: {''.join(decoded_sentence)}", sep="\n")
 
 if __name__ == "__main__":
-    main()
+    tp1()
