@@ -1,28 +1,9 @@
 from data.config import PATH, OUTPUT_PATH, MEDIA_PATH
 from scripts.transmitter import appearence_probs, entropy, huffman_algorithm, mean_length, minimum_length, shannon_range, codificate_text
 from scripts.receiver import decode_text, write_file
-from scripts.plot import plot_char_counts
+from scripts.extras import plot_char_counts, print_dict
 
-def print_dict(dict, title=None, sort=False) -> None:
-    """
-    prints a dictionary in a readable format, optionally with a title and sorted by values.
-    Parameters:
-        dict: the dictionary to be printed
-        title: optional string to be printed as a title before the dictionary
-        sort: if True, sorts the dictionary by values in descending order (and by keys in case of ties)
-    """
-    if title:
-        print(f"\n{title}")
-        print("-" * 30)
-    items = dict.items()
-    if sort:
-        try:
-            items = sorted(items, key=lambda x: (-x[1], x[0]))
-        except Exception:
-            items = sorted(items, key=lambda x: x[0])
-    for key, value in items:
-        print(f"  {repr(key)}: {value}")
-    print("-" * 30 + "\n")
+
 
 def tp1():
     with open(PATH, 'r') as f:
