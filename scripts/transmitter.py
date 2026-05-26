@@ -1,52 +1,29 @@
 import numpy as np
 
-def appearence_probs(text, display_counts=False, display_probas=False) -> dict: # we could use counter instead 
+def appearence_probs(text) -> tuple:
   """
   Calculates the appearance probability of each character in a string.
 
     Parameters:
         text: str, the text to be processed
-        display_counts: bool, if True prints the character counts
-        display_probas: bool, if True prints the character probabilities
 
     Returns:
         dict {character: probability}
+        dict {character: count}
   """
 
   char_counts_dict = { }
   for char in text:
       char_counts_dict[char] = char_counts_dict.get(char, 0) + 1
     
-  # Optionally, sort the counts for better readability
-  sorted_char_counts = dict(sorted(char_counts_dict.items()))
-
-  if display_counts:
-    print("Character counts:")
-    for char, count in sorted_char_counts.items():
-        # Handle newline and tab characters for clearer printing
-        if char == '\n':
-            print(f"'\\n' (newline): {count}")
-        elif char == '\t':
-            print(f"'\\t' (tab): {count}")
-        else:
-            print(f"'{char}': {count}")
+  sorted_char_counts = dict(sorted(char_counts_dict.items())) # Optionally, sort the counts for better readability
 
   probs_dict = {}
   total_chars = len(text)
   for char, count in sorted_char_counts.items():
       probs_dict[char] = count / total_chars
 
-  if display_probas:
-    print("Character probs:")
-    for char, prob in probs_dict.items():
-        if char == '\n':
-            print(f"'\\n' (newline): {prob:.4f}")
-        elif char == '\t':
-            print(f"'\\t' (tab): {prob:.4f}")
-        else:
-            print(f"'{char}': {prob:.4f}")
-
-  return probs_dict
+  return probs_dict, char_counts_dict
 
 def entropy(probs_dict) -> float:
     """
