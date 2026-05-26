@@ -1,2 +1,7 @@
-PATH = "C:\\Users\\Usuario\\Documents\\Github\\Comms-System\\data\\ack_sklar.txt"
-OUTPUT_PATH = "C:\\Users\\Usuario\\Documents\\Github\\Comms-System\\data\\output\\"
+from pathlib import Path
+
+_ROOT = Path(__file__).parent.parent
+
+PATH = _ROOT / "data" / "ack_sklar.txt"
+OUTPUT_PATH = _ROOT / "data" / "output"
+MEDIA_PATH = _ROOT / "media"

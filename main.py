@@ -1,6 +1,7 @@
-from data.config import PATH, OUTPUT_PATH
+from data.config import PATH, OUTPUT_PATH, MEDIA_PATH
 from scripts.transmitter import appearence_probs, entropy, huffman_algorithm, mean_length, minimum_length, shannon_range, codificate_text
 from scripts.receiver import decode_text, write_file
+from scripts.plot import plot_char_counts
 
 def print_dict(dict, title=None, sort=False) -> None:
     """
@@ -31,6 +32,7 @@ def tp1():
     probs_dict, char_counts_dict = appearence_probs(text)
     print_dict(char_counts_dict, "Character counts:", sort=True)
     print_dict(probs_dict, "Appearance probabilities:", sort=True)
+    plot_char_counts(char_counts_dict, MEDIA_PATH)
     
     # Huffman coding
     code_dict = huffman_algorithm(probs_dict)
@@ -50,7 +52,7 @@ def tp1():
     codified_codes = codificate_text(text, code_dict)
 
     decoded_symbols = decode_text(codified_codes, code_dict)
-    write_file(OUTPUT_PATH + "decoded_output.txt", decoded_symbols)
+    write_file(OUTPUT_PATH / "decoded_output.txt", decoded_symbols)
 
     # Sentence to test the codification and decoding
     text_sentence = text.split('.')[1] + '.' # take the first sentence of the text
