@@ -27,7 +27,7 @@ def tp1():
     print(f"Mean code length: {mean_len:.3f} bits/symbol", 
            f"Minimum code length: {min_len:.3f} bits/symbol", sep="\n")
 
-    # Codification and decoding
+
     codified_codes = codificate_text(text, code_dict)
 
     decoded_symbols = decode_text(codified_codes, code_dict)
