@@ -33,6 +33,7 @@ def tp1():
     decoded_symbols = decode_text(codified_codes, code_dict)
     write_file(OUTPUT_PATH / "decoded_output.txt", decoded_symbols)
 
+
     # Sentence to test the codification and decoding
     text_sentence = text.split('.')[1][1::] + '.' # take the first sentence of the text, removing the leading space and adding the dot at the end
     codified_sentence = codificate_text(text_sentence, code_dict)
