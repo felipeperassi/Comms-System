@@ -3,8 +3,6 @@ from scripts.transmitter import appearence_probs, entropy, huffman_algorithm, me
 from scripts.receiver import decode_text, write_file
 from scripts.extras import plot_char_counts, print_dict
 
-
-
 def tp1():
     with open(PATH, 'r') as f:
         text = f.read()
@@ -36,7 +34,7 @@ def tp1():
     write_file(OUTPUT_PATH / "decoded_output.txt", decoded_symbols)
 
     # Sentence to test the codification and decoding
-    text_sentence = text.split('.')[1] + '.' # take the first sentence of the text
+    text_sentence = text.split('.')[1][1::] + '.' # take the first sentence of the text, removing the leading space and adding the dot at the end
     codified_sentence = codificate_text(text_sentence, code_dict)
     decoded_sentence = decode_text(codified_sentence, code_dict)
     print(f"\nOriginal sentence: {text_sentence}", 
