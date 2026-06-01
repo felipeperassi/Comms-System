@@ -29,7 +29,6 @@ def tp1():
 
     # Codification and decoding
     codified_codes = codificate_text(text, code_dict)
-
     decoded_symbols = decode_text(codified_codes, code_dict)
     write_file(OUTPUT_PATH / "decoded_output.txt", decoded_symbols)
 

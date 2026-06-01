@@ -70,12 +70,6 @@ def huffman_algorithm(probs_dict) -> dict:
 
     return code_dict
 
-# testing:
-# probs = {"a": 0.35, "b": 0.17, "c": 0.17, "d": 0.10, "e": 0.10, "f": 0.07, "g": 0.04}
-# codes = huffman_algorithm(probs)
-# for symbol, code in codes.items():
-#     print(f"{symbol}: {code}")
-
 def mean_length(code_dict, probs_dict) -> float:
     """
     Calculates the mean code length of a Huffman code.
@@ -127,59 +121,75 @@ def codificate_text(text, code_dict) -> list:
     """
     return [code_dict[char] for char in text]
 
+def gray2binary(bits_vector):
+    """"
+    Converts a vector of bits in Gray code to binary code.
 
-# ---- Earlier version of huffman_algorithm ----
+    Parameters:
+        bits_vector: np.array, the input vector of bits in Gray code
+    Returns:
+        np.array: the output vector of bits in binary code
+    """
+    binary = np.zeros_like(bits_vector)
+    binary[0] = bits_vector[0]
+    for i in range(1, len(bits_vector)):
+        binary[i] = binary[i-1] ^ bits_vector[i]
 
-# def huffman_algorithm2(probs):
+    return binary
+    
+def modulation(char_list, modulation_type, M, code_label):
 
-#     counter = 0  # contador para desempatar nodos con igual probabilidad
+    names = ["QAM", "FSK"]
+    if modulation_type not in names:
+        raise ValueError(f"Invalid modulation type. Expected one of {names}, got {modulation_type}")
+    
+    if modulation_type == "FSK" and code_label == "Gray":
+        raise ValueError("Gray code is not applicable for FSK modulation.")
+        
+    if M < 2 or M > 16 or np.log2(M) % 1 != 0:
+        raise ValueError("M must be a power of 2 between 2 and 16 inclusive.")
 
-#     # Crear un nodo por cada símbolo: [prob, contador_unico, simbolo, hijo_izq, hijo_der]
-#     # Las hojas no tienen hijos, por eso None, None al final
-#     heap = []
-#     for sym, prob in probs.items():
-#         counter += 1
-#         heap.append([prob, counter, sym, None, None])
+    labels = ["Gray", "Binary"]
+    if code_label not in labels:
+        raise ValueError(f"Invalid code label. Expected one of {labels}, got {code_label}")
+    
+    bits_vector = np.array([int(b) for b in ''.join(char_list)]) # Vector of bits (it can be done outside)
+    if code_label == "Gray":
+        bits_vector = gray2binary(bits_vector)
+    if len(bits_vector) % k != 0: # Length of vector must be a multiple of k
+        bits_vector = np.pad(bits_vector, (0, k - (len(bits_vector) % k)), mode='constant') 
 
-#     # Ordenar el heap: el de menor probabilidad queda primero
-#     heapq.heapify(heap)
+    Eb, k = 1, int(np.log2(M))  # Energy per bit and bits per symbol
+    Es = Eb * k  # Energy per symbol
 
-#     # Repetir hasta que quede un solo nodo (la raíz)
-#     while len(heap) > 1:
+    if modulation_type == "QAM":
+        d = np.sqrt((Es * 6) / (M - 1)) # Minimum distance for QAM
+        constellation(modulation_type, M)
 
-#         # Sacar el nodo de menor probabilidad
-#         left = heapq.heappop(heap)
+    if modulation_type == "FSK":
+        d = np.sqrt(2 * Es)  # Minimum distance for FSK
+        constellation(modulation_type, M)
 
-#         # Sacar el siguiente nodo de menor probabilidad
-#         right = heapq.heappop(heap)
+def constellation(modulation_type, M):
+    Eb, k = 1, int(np.log2(M))  # Energy per bit and bits per symbol
+    Es = Eb * k  # Energy per symbol
 
-#         # Crear un nodo padre que los combine
-#         # su prob es la suma de los dos hijos
-#         # su símbolo es None porque no representa ningún caracter
-#         counter += 1
-#         padre = [left[0] + right[0], counter, None, left, right]
+    if modulation_type == "QAM":
+        sqrt_m = int(np.sqrt(M))
+        points = np.arange(-sqrt_m + 1, sqrt_m, 2)
+        
+        I, Q = np.meshgrid(points, points)
+        constellation = np.column_stack([I.flatten(), Q.flatten()])
+        
+        # Normalizar energía
+        energy = np.mean(np.sum(constellation**2, axis=1))
+        constellation = constellation * np.sqrt(Es / energy)
+        
+        return constellation
 
-#         # Insertar el padre de vuelta en el heap
-#         heapq.heappush(heap, padre)
-
-#     # Cuando queda uno solo, ese es la raíz del árbol
-#     raiz = heap[0]
-
-#     # Recorrer el árbol y asignar códigos binarios
-#     codigos = {}
-#     _asignar_codigos(raiz, '', codigos)
-#     return codigos
-
-
-# def _asignar_codigos(nodo, codigo_actual, codigos):
-
-#     # Si el nodo tiene símbolo, es una hoja → guardar su código
-#     if nodo[2] is not None:
-#         codigos[nodo[2]] = codigo_actual
-#         return
-
-#     # Bajar al hijo izquierdo agregando '0' al código
-#     _asignar_codigos(nodo[3], codigo_actual + '0', codigos)
-
-#     # Bajar al hijo derecho agregando '1' al código
-#     _asignar_codigos(nodo[4], codigo_actual + '1', codigos)
+    elif modulation_type == "FSK":
+        frequencies = np.arange(M)
+        constellation = np.column_stack([np.cos(2*np.pi*frequencies/M), np.sin(2*np.pi*frequencies/M)])
+        constellation = constellation * np.sqrt(Es)
+        
+        return constellation
