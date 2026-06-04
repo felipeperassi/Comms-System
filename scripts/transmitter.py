@@ -121,75 +121,88 @@ def codificate_text(text, code_dict) -> list:
     """
     return [code_dict[char] for char in text]
 
-def gray2binary(bits_vector):
+def gray2binary(bits):
     """"
     Converts a vector of bits in Gray code to binary code.
 
     Parameters:
-        bits_vector: np.array, the input vector of bits in Gray code
+        bits: np.array, the input vector of bits in Gray code
     Returns:
         np.array: the output vector of bits in binary code
     """
-    binary = np.zeros_like(bits_vector)
-    binary[0] = bits_vector[0]
-    for i in range(1, len(bits_vector)):
-        binary[i] = binary[i-1] ^ bits_vector[i]
+    binary = np.zeros_like(bits)
+    binary[0] = bits[0]
+    for i in range(1, len(bits)):
+        binary[i] = binary[i-1] ^ bits[i]
 
     return binary
-    
+
+def binary2decimal(bits):
+    """
+    Converts a vector of bits to a decimal number.
+
+    Parameters:
+        bits: np.array, the input vector of bits
+    Returns:
+        int: the decimal number
+    """
+    return int(''.join(map(str, bits)), 2)
+
+def amplitude_label(bits_axis, n_levels, code_label):
+    if len(bits_axis) == 0:
+        return 0
+
+    if code_label == "Gray":
+        bits_axis = gray2binary(bits_axis)
+    pos = binary2decimal(bits_axis)
+    return 2 * pos - (n_levels - 1)
+
 def modulation(char_list, modulation_type, M, code_label):
 
-    names = ["QAM", "FSK"]
-    if modulation_type not in names:
-        raise ValueError(f"Invalid modulation type. Expected one of {names}, got {modulation_type}")
-    
+    supported_types = ["QAM", "FSK"]
+    if modulation_type not in supported_types:
+        raise ValueError(f"Invalid modulation type. Expected one of {supported_types}, got {modulation_type}")
+
     if modulation_type == "FSK" and code_label == "Gray":
         raise ValueError("Gray code is not applicable for FSK modulation.")
-        
+
     if M < 2 or M > 16 or np.log2(M) % 1 != 0:
         raise ValueError("M must be a power of 2 between 2 and 16 inclusive.")
 
     labels = ["Gray", "Binary"]
     if code_label not in labels:
         raise ValueError(f"Invalid code label. Expected one of {labels}, got {code_label}")
-    
-    bits_vector = np.array([int(b) for b in ''.join(char_list)]) # Vector of bits (it can be done outside)
-    if code_label == "Gray":
-        bits_vector = gray2binary(bits_vector)
-    if len(bits_vector) % k != 0: # Length of vector must be a multiple of k
-        bits_vector = np.pad(bits_vector, (0, k - (len(bits_vector) % k)), mode='constant') 
 
-    Eb, k = 1, int(np.log2(M))  # Energy per bit and bits per symbol
-    Es = Eb * k  # Energy per symbol
+    bits = np.array([int(b) for b in ''.join(char_list)]) # Vector of bits (it can be done outside)
+
+    Eb = 1                  # Energy per bit
+    k = int(np.log2(M))     # Bits per symbol
+    Es = Eb * k             # Energy per symbol
+
+    if len(bits) % k != 0: # Vector length must be a multiple of k
+        bits = np.pad(bits, (0, k - (len(bits) % k)), mode='constant')
+
+    symbols = bits.reshape(-1, k) # (N words x k bits)
+    symbols_idx = np.array([binary2decimal(row) for row in symbols]) # decimal representation of the N words (N x 1)
 
     if modulation_type == "QAM":
-        d = np.sqrt((Es * 6) / (M - 1)) # Minimum distance for QAM
-        constellation(modulation_type, M)
+        kI, kQ = np.ceil(k / 2), np.floor(k / 2) # Round up & down
+        MI, MQ = 2 ** kI, 2 ** kQ
+
+        constellation = np.zeros((M, 2))
+        for number in range(M):
+            binary_number = np.array(list(np.binary_repr(number, width=k)), dtype=int) # decimal to binary
+            coordI = amplitude_label(binary_number[:kI], MI, code_label)
+            coordQ = amplitude_label(binary_number[kI:], MQ, code_label)
+            constellation[number] = [coordI, coordQ]
+
+        Es_grid = np.mean(np.sum(constellation**2, axis=1))
+        constellation *= np.sqrt(Es / Es_grid)
+
+        return constellation[symbols_idx] # (N x 2)
 
     if modulation_type == "FSK":
-        d = np.sqrt(2 * Es)  # Minimum distance for FSK
-        constellation(modulation_type, M)
+        coords = np.zeros((len(symbols), M))
+        coords[np.arange(len(symbols)), symbols_idx] = np.sqrt(Es)
 
-def constellation(modulation_type, M):
-    Eb, k = 1, int(np.log2(M))  # Energy per bit and bits per symbol
-    Es = Eb * k  # Energy per symbol
-
-    if modulation_type == "QAM":
-        sqrt_m = int(np.sqrt(M))
-        points = np.arange(-sqrt_m + 1, sqrt_m, 2)
-        
-        I, Q = np.meshgrid(points, points)
-        constellation = np.column_stack([I.flatten(), Q.flatten()])
-        
-        # Normalizar energía
-        energy = np.mean(np.sum(constellation**2, axis=1))
-        constellation = constellation * np.sqrt(Es / energy)
-        
-        return constellation
-
-    elif modulation_type == "FSK":
-        frequencies = np.arange(M)
-        constellation = np.column_stack([np.cos(2*np.pi*frequencies/M), np.sin(2*np.pi*frequencies/M)])
-        constellation = constellation * np.sqrt(Es)
-        
-        return constellation
+        return coords # (N x M)
