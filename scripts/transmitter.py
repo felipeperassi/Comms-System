@@ -1,5 +1,6 @@
 import numpy as np
 
+# TP1
 def appearence_probs(text) -> tuple:
   """
   Calculates the appearance probability of each character in a string.
@@ -120,6 +121,8 @@ def codificate_text(text, code_dict) -> list:
         list: the codified binary codes for each character in the text
     """
     return [code_dict[char] for char in text]
+
+# TP2
 
 def gray2binary(bits):
     """"
