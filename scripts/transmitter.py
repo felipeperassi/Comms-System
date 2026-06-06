@@ -34,7 +34,7 @@ def entropy(probs_dict) -> float:
         probs_dict: dict {symbol: probability}
 
     Returns:
-        float: entropy in bits
+        float: entropy in binary_vector
     """
     return np.sum([-prob * np.log2(prob) for prob in probs_dict.values()])
 
@@ -80,7 +80,7 @@ def mean_length(code_dict, probs_dict) -> float:
         probs_dict: dict {symbol: probability}
     
     Returns:
-        float: expected number of bits per symbol
+        float: expected number of binary_vector per symbol
     """
     return sum(probs_dict[sym] * len(code) for sym, code in code_dict.items())
 
@@ -124,72 +124,89 @@ def codificate_text(text, code_dict) -> list:
 
 # TP2
 
-def gray2binary(bits):
+def gray2binary(binary_vector) -> np.array:
     """"
-    Converts a vector of bits in Gray code to binary code.
+    Converts a vector of binary_vector in Gray code to binary code.
 
     Parameters:
-        bits: np.array, the input vector of bits in Gray code
+        binary_vector: np.array, the input vector of binary_vector in Gray code
     Returns:
-        np.array: the output vector of bits in binary code
+        np.array: the output vector of binary_vector in binary code
     """
-    binary = np.zeros_like(bits)
-    binary[0] = bits[0]
-    for i in range(1, len(bits)):
-        binary[i] = binary[i-1] ^ bits[i]
+    binary = np.zeros_like(binary_vector)
+    binary[0] = binary_vector[0]
+    for i in range(1, len(binary_vector)):
+        binary[i] = binary[i-1] ^ binary_vector[i]
 
     return binary
 
-def binary2decimal(bits):
+def binary2decimal(binary_vector) -> int:
     """
-    Converts a vector of bits to a decimal number.
+    Converts a vector of binary numbers to a decimal number.
 
     Parameters:
-        bits: np.array, the input vector of bits
+        binary_vector: np.array, the input vector of binary numbers (e.g., [1, 0, 1] for the binary number "101")
     Returns:
         int: the decimal number
     """
-    return int(''.join(map(str, bits)), 2)
+    return int(''.join(map(str, binary_vector)), 2)
 
-def amplitude_label(bits_axis, n_levels, code_label):
+def amplitude_label(bits_axis, n_levels, code_label) -> float:
+    """
+    Converts a vector of binary_vector to an amplitude level based on the specified code label.
+    Parameters:
+        bits_axis: np.array, the input vector of binary_vector representing the symbol index
+        n_levels: int, the number of amplitude levels (M)
+        code_label: str, the type of code ("Gray" or "Binary")
+    Returns:
+        float: the amplitude level corresponding to the input binary_vector
+    """
     if len(bits_axis) == 0:
         return 0
 
     if code_label == "Gray":
         bits_axis = gray2binary(bits_axis)
+
     pos = binary2decimal(bits_axis)
     return 2 * pos - (n_levels - 1)
 
-def modulation(char_list, modulation_type, M, code_label):
+def modulate_symbols(binary_vector, modulation_type, M, code_label) -> np.array:
+    """
+    Modulates a binary vector into a constellation based on the specified modulation type, M-ary level and code label.
 
+    Parameters:
+        binary_vector: np.array, the input vector with a binary representation
+        modulation_type: str, the type of modulation ("QAM" or "FSK")
+        M: int, the number of symbols in the constellation
+        code_label: str, the type of code ("Gray" or "Binary")
+    Returns:
+        np.array: the modulated constellation points corresponding to the input characters
+    """
     supported_types = ["QAM", "FSK"]
     if modulation_type not in supported_types:
         raise ValueError(f"Invalid modulation type. Expected one of {supported_types}, got {modulation_type}")
 
-    if modulation_type == "FSK" and code_label == "Gray":
+    labels = ["GRAY", "BINARY"]
+    if code_label.upper() not in labels:
+        raise ValueError(f"Invalid code label. Expected one of {labels}, got {code_label}")
+    if modulation_type == "FSK" and code_label.upper() == "GRAY":
         raise ValueError("Gray code is not applicable for FSK modulation.")
 
     if M < 2 or M > 16 or np.log2(M) % 1 != 0:
         raise ValueError("M must be a power of 2 between 2 and 16 inclusive.")
 
-    labels = ["Gray", "Binary"]
-    if code_label not in labels:
-        raise ValueError(f"Invalid code label. Expected one of {labels}, got {code_label}")
-
-    bits = np.array([int(b) for b in ''.join(char_list)]) # Vector of bits (it can be done outside)
-
     Eb = 1                  # Energy per bit
     k = int(np.log2(M))     # Bits per symbol
     Es = Eb * k             # Energy per symbol
 
-    if len(bits) % k != 0: # Vector length must be a multiple of k
-        bits = np.pad(bits, (0, k - (len(bits) % k)), mode='constant')
+    if len(binary_vector) % k != 0: # Vector length must be a multiple of k
+        binary_vector = np.pad(binary_vector, (0, k - (len(binary_vector) % k)), mode='constant')
 
-    symbols = bits.reshape(-1, k) # (N words x k bits)
+    symbols = binary_vector.reshape(-1, k) # (N words x k binary_vector)
     symbols_idx = np.array([binary2decimal(row) for row in symbols]) # decimal representation of the N words (N x 1)
 
     if modulation_type == "QAM":
-        kI, kQ = np.ceil(k / 2), np.floor(k / 2) # Round up & down
+        kI, kQ = int(np.ceil(k / 2)), int(np.floor(k / 2)) # Round up & down
         MI, MQ = 2 ** kI, 2 ** kQ
 
         constellation = np.zeros((M, 2))
@@ -209,3 +226,20 @@ def modulation(char_list, modulation_type, M, code_label):
         coords[np.arange(len(symbols)), symbols_idx] = np.sqrt(Es)
 
         return coords # (N x M)
+
+def calculate_energies(modulated_signal, M) -> tuple:
+    """
+    Calculates the energy of a modulated signal.
+
+    Parameters:
+        modulated_signal: np.array, the input modulated signal (N x 2 for QAM or N x M for FSK)
+        M: int, the number of symbols in the constellation
+    Returns:
+        tuple: (Es, Eb) where Es is the energy per symbol and Eb is the energy per bit
+    """
+
+    Es = np.sum(modulated_signal**2, axis=1) # Energy per symbol
+    Eb = Es / np.log2(M) # Energy per bit
+
+    return Es, Eb
+

@@ -50,3 +50,27 @@ def print_dict(dict, title=None, sort=False) -> None:
     for key, value in items:
         print(f"  {repr(key)}: {value}")
     print("-" * 30 + "\n")
+
+def plot_constellation(constellation, output_dir: str, filename: str = "constellation.png") -> None:
+    """
+    Plots the constellation points and saves it as an image file.
+
+    Parameters:
+        constellation: np.array of shape (N, 2) representing the constellation points
+        output_dir: str, the directory where the image will be saved
+        filename: str, the name of the image file (default: "constellation.png")
+    """
+    plt.figure(figsize=(6, 6))
+    ax = plt.gca()
+    ax.set_axisbelow(True)         
+
+    ax.grid(alpha=0.3)              
+    ax.scatter(constellation[:, 0], constellation[:, 1], marker="x")
+    ax.set_xlabel("In-phase")
+    ax.set_ylabel("Quadrature")
+    ax.set_title("Constellation Diagram")
+    ax.axis('equal')
+
+    os.makedirs(output_dir, exist_ok=True)
+    plt.savefig(os.path.join(output_dir, filename), dpi=150)
+    plt.close()

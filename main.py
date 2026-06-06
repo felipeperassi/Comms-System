@@ -1,12 +1,13 @@
+import numpy as np
 from data.config import PATH, OUTPUT_PATH, MEDIA_PATH
-from scripts.transmitter import appearence_probs, entropy, huffman_algorithm, mean_length, minimum_length, shannon_range, codificate_text
+from scripts.transmitter import (
+    appearence_probs, entropy, huffman_algorithm, mean_length, minimum_length, shannon_range, codificate_text, 
+    modulate_symbols, calculate_energies
+)
 from scripts.receiver import decode_text, write_file
-from scripts.extras import plot_char_counts, print_dict
+from scripts.extras import plot_char_counts, print_dict, plot_constellation
 
-def tp1():
-    with open(PATH, 'r') as f:
-        text = f.read()
-    
+def tp1(text, return_codified=False):
     # Calculate probabilities & counts
     probs_dict, char_counts_dict = appearence_probs(text)
     print_dict(char_counts_dict, "Character counts:", sort=True)
@@ -28,9 +29,9 @@ def tp1():
            f"Minimum code length: {min_len:.3f} bits/symbol", sep="\n")
 
     # Codification and decoding
-    codified_codes = codificate_text(text, code_dict)
-    decoded_symbols = decode_text(codified_codes, code_dict)
-    write_file(OUTPUT_PATH / "decoded_output.txt", decoded_symbols)
+    codified_text = codificate_text(text, code_dict)
+    decoded_text = decode_text(codified_text, code_dict)
+    write_file(OUTPUT_PATH / "decoded_output.txt", decoded_text)
 
     # Sentence to test the codification and decoding
     text_sentence = text.split('.')[1][1::] + '.' # take the first sentence of the text, removing the leading space and adding the dot at the end
@@ -39,6 +40,28 @@ def tp1():
     print(f"\nOriginal sentence: {text_sentence}", 
           f"Codified sentence: {' '.join(codified_sentence)}", 
           f"Decoded sentence: {''.join(decoded_sentence)}", sep="\n")
+    
+    if return_codified: return codified_text
+
+def tp2(binary_vector):
+
+    # Modulation
+    modulation_type, M, code_label = "FSK", 4, "Binary"
+    constellation = modulate_symbols(binary_vector, modulation_type, M, code_label)
+    print(f"\nConstellation points for {modulation_type} modulation with M={M} and {code_label} code:")
+    print(constellation)
+
+    # Calculate energy
+    Eb, Es = calculate_energies(constellation, M)
+    print(f"Energy per symbol (Es): {Es:.3f}", f"Energy per bit (Eb): {Eb:.3f}", sep="\n")
+    
+    if modulation_type == "QAM":
+        plot_constellation(constellation, MEDIA_PATH)
 
 if __name__ == "__main__":
-    tp1()
+    with open(PATH, 'r') as f:
+        text = f.read()
+    
+    codified_text = tp1(text, return_codified=True)
+    binary_vector = np.array([int(b) for b in ''.join(codified_text)]) # Vector of bits representing the codified text
+    tp2(binary_vector)
