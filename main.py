@@ -82,7 +82,12 @@ def tp3(binary_vector):
     dmin, e, t = code_parameters(G, k, n)
 
     print(f"H:\n{H}")
+    print(f"Syndrome table:\n{S}")
     print(f"dmin: {dmin}", f"e: {e}", f"t: {t}", sep="\n")
+
+    print(f"Original vector:  {binary_vector}")
+    print(f"Encoded vector:   {encoded_vector}")
+    print(f"Decoded vector:   {decoded_vector}")
 
 if __name__ == "__main__":
     with open(PATH, 'r') as f:

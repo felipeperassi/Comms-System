@@ -257,9 +257,9 @@ def codificate_channel(binary_vector, G, k, n) -> np.array:
     # Padding si el vector no es múltiplo de k
     remainder = len(binary_vector) % k
     if remainder != 0:
-        binary_vector = np.concatenate([binary_vector, np.zeros(k - remainder, dtype=int)])
+        binary_vector = np.concatenate([binary_vector, np.zeros(k - remainder, dtype=int)]) #agrego los 0s si no es multiplo de k
 
-    blocks = binary_vector.reshape(-1, k)
-    encoded_blocks = np.array([encode_block(block, k, n, G) for block in blocks])
+    blocks = binary_vector.reshape(-1, k) #armo los bloques de k bits
+    encoded_blocks = np.array([encode_block(block, k, n, G) for block in blocks]) #codifico cada bloque con la función encode_block
 
     return encoded_blocks.flatten()

@@ -35,7 +35,7 @@ def parity(G, k, n) -> np.array:
     return H
 
 def syndrome(U, H) -> np.array:
-    return tuple(np.mod(U @ H.T, 2).astype(int))
+    return tuple(np.mod(U @ H.T, 2).astype(int).tolist()) # calculo el síndrome como U * H^T mod 2, y lo convierto a tupla para usarlo como clave en el diccionario
 
 def syndrome_table(H, n) -> dict:
 
@@ -45,7 +45,7 @@ def syndrome_table(H, n) -> dict:
         error = np.zeros(n, dtype=int)  # patrón de error
         error[i] = 1                    # error en el bit i
 
-        s = tuple(np.mod(error @ H.T, 2).astype(int))  # síndrome
+        s = syndrome(error, H)  # síndrome
         table[s] = error
 
     return table #me devuelve un diccionario con el síndrome como clave y el patrón de error como valor
