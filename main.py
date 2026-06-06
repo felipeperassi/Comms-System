@@ -55,6 +55,7 @@ def tp2(binary_vector):
     Eb, Es = calculate_energies(constellation, M)
     print(f"Energy per symbol (Es): {Es:.3f}", f"Energy per bit (Eb): {Eb:.3f}", sep="\n")
     
+    # Plot constellation if modulation is QAM (FSK w/ M=2 can be plotted as well, it can be implemented)
     if modulation_type == "QAM":
         plot_constellation(constellation, MEDIA_PATH)
 
