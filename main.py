@@ -2,10 +2,11 @@ import numpy as np
 from data.config import PATH, OUTPUT_PATH, MEDIA_PATH
 from scripts.transmitter import (
     appearence_probs, entropy, huffman_algorithm, mean_length, minimum_length, shannon_range, codificate_text, 
-    modulate_symbols, calculate_energies
+    modulate_symbols, calculate_energies, encode_block,codificate_channel
 )
-from scripts.receiver import decode_text, write_file
+from scripts.receiver import decode_text, write_file,code_parameters,decodificate_channel,decode_block,syndrome_table,syndrome,parity
 from scripts.extras import plot_char_counts, print_dict, plot_constellation
+
 
 def tp1(text, return_codified=False):
     # Calculate probabilities & counts
@@ -59,6 +60,30 @@ def tp2(binary_vector):
     if modulation_type == "QAM":
         plot_constellation(constellation, MEDIA_PATH)
 
+def tp3(binary_vector):
+    
+    # Parámetros del código
+    k = 4
+    n = 8
+    G = np.array([
+        [1, 1, 1, 0, 1, 0, 0, 0],
+        [1, 1, 0, 1, 0, 1, 0, 0],
+        [1, 0, 1, 1, 0, 0, 1, 0],
+        [0, 1, 1, 1, 0, 0, 0, 1]
+    ], dtype=int)
+
+    # Transmisor
+    encoded_vector = codificate_channel(binary_vector, G, k, n)
+
+    # Receptor
+    H = parity(G, k, n)
+    S = syndrome_table(H, n)
+    decoded_vector = decodificate_channel(encoded_vector, H, S, k, n)
+    dmin, e, t = code_parameters(G, k, n)
+
+    print(f"H:\n{H}")
+    print(f"dmin: {dmin}", f"e: {e}", f"t: {t}", sep="\n")
+
 if __name__ == "__main__":
     with open(PATH, 'r') as f:
         text = f.read()
@@ -66,3 +91,5 @@ if __name__ == "__main__":
     codified_text = tp1(text, return_codified=True)
     binary_vector = np.array([int(b) for b in ''.join(codified_text)]) # Vector of bits representing the codified text
     tp2(binary_vector)
+    tp3(binary_vector)
+
