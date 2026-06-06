@@ -46,14 +46,14 @@ def tp1(text, return_codified=False):
 def tp2(binary_vector):
 
     # Modulation
-    modulation_type, M, code_label = "FSK", 4, "Binary"
+    modulation_type, M, code_label = "QAM", 16, "Binary"
     constellation = modulate_symbols(binary_vector, modulation_type, M, code_label)
     print(f"\nConstellation points for {modulation_type} modulation with M={M} and {code_label} code:")
     print(constellation)
 
     # Calculate energy
     Eb, Es = calculate_energies(constellation, M)
-    print(f"Energy per symbol (Es): {Es:.3f}", f"Energy per bit (Eb): {Eb:.3f}", sep="\n")
+    print(f"\nEnergy per bit (Eb): {Eb}", f"Energy per symbol (Es): {Es}", sep="\n")
     
     # Plot constellation if modulation is QAM (FSK w/ M=2 can be plotted as well, it can be implemented)
     if modulation_type == "QAM":
