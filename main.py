@@ -4,7 +4,7 @@ from scripts.transmitter import (
     appearence_probs, entropy, huffman_algorithm, mean_length, minimum_length, shannon_range, codificate_text, 
     modulate_symbols, calculate_energies
 )
-from scripts.receiver import decode_text, write_file
+from scripts.receiver import decode_text, write_file, demodulate_symbols
 from scripts.extras import plot_char_counts, print_dict, plot_constellation
 
 def tp1(text, return_codified=False):
@@ -52,8 +52,12 @@ def tp2(binary_vector):
     print(constellation)
 
     # Calculate energy
-    Eb, Es = calculate_energies(constellation, M)
+    Es, Eb = calculate_energies(constellation, M)
     print(f"\nEnergy per bit (Eb): {Eb}", f"Energy per symbol (Es): {Es}", sep="\n")
+
+    # Demodulation
+    demodulated_binary_vector = demodulate_symbols(constellation, modulation_type, M, code_label, original_length=len(binary_vector))
+    print(f"\nDemodulation successful: {np.array_equal(binary_vector, demodulated_binary_vector)}")
     
     # Plot constellation if modulation is QAM (FSK w/ M=2 can be plotted as well, it can be implemented)
     if modulation_type == "QAM":

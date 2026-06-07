@@ -199,6 +199,7 @@ def modulate_symbols(binary_vector, modulation_type, M, code_label) -> np.array:
     k = int(np.log2(M))     # Bits per symbol
     Es = Eb * k             # Energy per symbol
 
+    """CHEQUEAR ESTO SI SE AGREGAN LOS CEROS AL PRINCIPIO O AL FINAL"""
     if len(binary_vector) % k != 0: # Vector length must be a multiple of k
         binary_vector = np.pad(binary_vector, (0, k - (len(binary_vector) % k)), mode='constant')
 
@@ -242,4 +243,3 @@ def calculate_energies(modulated_signal, M) -> tuple:
     Eb = Es / np.log2(M) # Energy per bit
 
     return Es, Eb
-
