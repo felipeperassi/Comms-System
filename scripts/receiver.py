@@ -2,6 +2,9 @@
 import numpy as np
 
 from scripts.transmitter import amplitude_label
+import numpy as np
+
+from scripts.transmitter import encode_block
 
 def decode_text(codified_codes, code_dict) -> list:
     """
@@ -108,3 +111,65 @@ def demodulate_symbols(received_signal, modulation_type, M, code_label, original
         binary_vector = binary_vector[:original_length]
 
     return binary_vector
+
+
+
+def parity(G, k, n) -> np.array:
+    P = G[:, :n-k]        #G tiene la identidad en el lado derecho     # primeras n-k columnas (la parte P)
+    H = np.hstack((P.T, np.eye(n-k, dtype=int))) # H = [P^T | I(n-k)]
+    return H
+
+def syndrome(U, H) -> np.array:
+    return tuple(np.mod(U @ H.T, 2).astype(int).tolist()) # calculo el síndrome como U * H^T mod 2, y lo convierto a tupla para usarlo como clave en el diccionario
+
+def syndrome_table(H, n) -> dict:
+
+    table = {}
+
+    for i in range(n):
+        error = np.zeros(n, dtype=int)  # patrón de error
+        error[i] = 1                    # error en el bit i
+
+        s = syndrome(error, H)  # síndrome
+        table[s] = error
+
+    return table #me devuelve un diccionario con el síndrome como clave y el patrón de error como valor
+
+def decode_block(U, H, S, k) -> np.array:
+    #Decodifica y corrige una palabra de n bits.
+
+    s = syndrome(U, H)  # calculo el síndrome
+
+    if s in S:
+        U = np.mod(U + S[s], 2)  # corrijo el error
+
+    return U[-k:]  # devuelvo los últimos k bits (mensaje original)
+
+def decodificate_channel(binary_vector, H, S, k, n) -> np.array:
+    
+    #Organiza el vector binario en bloques de n bits y decodifica cada uno.
+
+    blocks = binary_vector.reshape(-1, n)
+    decoded_blocks = np.array([decode_block(block, H, S, k) for block in blocks])
+
+    return decoded_blocks.flatten()
+
+
+def code_parameters(G, k, n) -> tuple:
+    
+    ##Calcula la distancia mínima dmin, la cantidad máxima de errores a detectar e y a corregir t.
+
+    codewords = []
+    for i in range(2**k): # genero todas las 2^k palabras código posibles
+        message = np.array(list(np.binary_repr(i, width=k)), dtype=int)  # convierte i a binario de k bits ydesp convierte el string a array
+        codeword = encode_block(message, k, n, G)
+        codewords.append(codeword)
+
+    # calculo el peso de cada palabra código (cantidad de 1s), sin contar la palabra cero
+    weights = [np.sum(codeword) for codeword in codewords if np.sum(codeword) > 0]
+
+    dmin = int(min(weights))
+    e = dmin - 1        # errores que puede detectar
+    t = (dmin - 1) // 2 # errores que puede corregir
+
+    return dmin, e, t
