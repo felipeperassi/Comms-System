@@ -7,7 +7,7 @@ from scripts.transmitter import (
 from scripts.receiver import decode_text, write_file,code_parameters,decodificate_channel,decode_block,syndrome_table,syndrome,parity,demodulate_symbols
 from scripts.extras import plot_char_counts, print_dict, plot_constellation
 
-def tp1(text, return_codified=False):
+def codificacion_fuente(text, return_codified=False):
     # Calculate probabilities & counts
     probs_dict, char_counts_dict = appearence_probs(text)
     print_dict(char_counts_dict, "Character counts:", sort=True)
@@ -43,7 +43,7 @@ def tp1(text, return_codified=False):
     
     if return_codified: return codified_text
 
-def tp2(binary_vector):
+def modulacion(binary_vector):
 
     # Modulation
     modulation_type, M, code_label = "QAM", 16, "Binary"
@@ -63,7 +63,7 @@ def tp2(binary_vector):
     if modulation_type == "QAM":
         plot_constellation(constellation, MEDIA_PATH)
 
-def tp3(binary_vector):
+def codificacion_canal(binary_vector):
     
     # Parámetros del código
     k = 4
@@ -96,8 +96,8 @@ if __name__ == "__main__":
     with open(PATH, 'r') as f:
         text = f.read()
     
-    codified_text = tp1(text, return_codified=True)
+    codified_text = codificacion_fuente(text, return_codified=True)
     binary_vector = np.array([int(b) for b in ''.join(codified_text)]) # Vector of bits representing the codified text
-    tp2(binary_vector)
-    tp3(binary_vector)
+    modulacion(binary_vector)
+    codificacion_canal(binary_vector)
 
