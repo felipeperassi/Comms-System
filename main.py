@@ -4,9 +4,8 @@ from scripts.transmitter import (
     appearence_probs, entropy, huffman_algorithm, mean_length, minimum_length, shannon_range, codificate_text, 
     modulate_symbols, calculate_energies, encode_block,codificate_channel
 )
-from scripts.receiver import decode_text, write_file
+from scripts.receiver import decode_text, write_file,code_parameters,decodificate_channel,decode_block,syndrome_table,syndrome,parity,demodulate_symbols
 from scripts.extras import plot_char_counts, print_dict, plot_constellation
-
 
 def tp1(text, return_codified=False):
     # Calculate probabilities & counts
@@ -100,3 +99,5 @@ if __name__ == "__main__":
     codified_text = tp1(text, return_codified=True)
     binary_vector = np.array([int(b) for b in ''.join(codified_text)]) # Vector of bits representing the codified text
     tp2(binary_vector)
+    tp3(binary_vector)
+

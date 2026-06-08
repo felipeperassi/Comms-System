@@ -112,7 +112,7 @@ def demodulate_symbols(received_signal, modulation_type, M, code_label, original
 
     return binary_vector
 
-
+# TP3
 
 def parity(G, k, n) -> np.array:
     P = G[:, :n-k]        #G tiene la identidad en el lado derecho     # primeras n-k columnas (la parte P)
