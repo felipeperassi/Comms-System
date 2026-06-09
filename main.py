@@ -4,9 +4,11 @@ from scripts.transmitter import (
     appearence_probs, entropy, huffman_algorithm, mean_length, minimum_length, shannon_range, codificate_text, 
     modulate_symbols, calculate_energies, encode_block,codificate_channel
 )
-from scripts.receiver import decode_text, write_file,code_parameters,decodificate_channel,decode_block,syndrome_table,syndrome,parity,demodulate_symbols
+from scripts.receiver import decode_text, write_file,code_parameters,decodificate_channel,syndrome_table,syndrome,parity,demodulate_symbols
 from scripts.extras import plot_char_counts, print_dict, plot_constellation
 from scripts.channel import channel_effects
+
+#CODIFICACION DE FUENTE
 
 def codificacion_fuente(text, return_codified=False):
     # Calculate probabilities & counts
@@ -42,38 +44,10 @@ def codificacion_fuente(text, return_codified=False):
           f"Codified sentence: {' '.join(codified_sentence)}", 
           f"Decoded sentence: {''.join(decoded_sentence)}", sep="\n")
     
+ 
     if return_codified: return codified_text
 
-def modulacion(binary_vector):
-
-    # Modulation
-    modulation_type, M, code_label = "QAM", 16, "Binary"
-    symbols = modulate_symbols(binary_vector, modulation_type, M, code_label)
-    print(f"\nConstellation points for {modulation_type} modulation with M={M} and {code_label} code:")
-    print(symbols)
-
-    # Calculate energy
-    Es, Eb = calculate_energies(symbols, M)
-    print(f"\nEnergy per bit (Eb): {Eb}", f"Energy per symbol (Es): {Es}", sep="\n")
-
-    Eb_N0_dB = 6
-    Eb_N0_linear = 10**(Eb_N0_dB / 10)
-    N0 = Eb / Eb_N0_linear
-    
-    received_symbols = channel_effects(symbols, N0)
-
-    # Demodulation sin ruido
-    demodulated_binary_vector = demodulate_symbols(symbols, modulation_type, M, code_label, original_length=len(binary_vector))
-    print(f"\nDemodulation successful: {np.array_equal(binary_vector, demodulated_binary_vector)}")
-
-    # demodulation con ruido
-    demodulated_binary_vector = demodulate_symbols(received_symbols, modulation_type, M, code_label, original_length=len(binary_vector))
-    print(f"\nDemodulation successful: {np.array_equal(binary_vector, demodulated_binary_vector)}") 
-
-    # Plot constellation if modulation is QAM (FSK w/ M=2 can be plotted as well, it can be implemented)
-    if modulation_type == "QAM":
-        plot_constellation(symbols, MEDIA_PATH)
-        plot_constellation(received_symbols, MEDIA_PATH, filename="received_constellation.png")
+#CODIFICACION DE CANAL
 
 def codificacion_canal(binary_vector):
     
@@ -104,13 +78,54 @@ def codificacion_canal(binary_vector):
     print(f"Encoded vector:   {encoded_vector}")
     print(f"Decoded vector:   {decoded_vector}")
 
+    return encoded_vector
+
+#MODULACION
+
+def modulacion(binary_vector):
+
+    # Modulation
+    modulation_type, M, code_label = "QAM", 16, "Binary"
+    symbols = modulate_symbols(binary_vector, modulation_type, M, code_label)
+    print(f"\nConstellation points for {modulation_type} modulation with M={M} and {code_label} code:")
+    print(symbols)
+
+    # Calculate energy
+    Es, Eb = calculate_energies(symbols, M)
+    Eb_mean = np.mean(Eb)
+    print(f"\nEnergy per bit (Eb): {Eb}", f"Energy per symbol (Es): {Es}", sep="\n")
+
+    # Channel effects
+    N0 = 0.157 # Noise power spectral density
+    Eb_N0_linear = Eb_mean / N0
+    Eb_N0_dB = 10 * np.log10(Eb_N0_linear)
+    print(f"\nEb/N0 = {Eb_N0_dB:.2f} dB")
+    
+    received_symbols = channel_effects(symbols, N0)
+
+    # Demodulation sin ruido
+    demodulated_binary_vector = demodulate_symbols(symbols, modulation_type, M, code_label, original_length=len(binary_vector))
+    print(f"\nDemodulation successful: {np.array_equal(binary_vector, demodulated_binary_vector)}")
+
+    # Plot constellation if modulation is QAM (FSK w/ M=2 can be plotted as well, it can be implemented)
+    if modulation_type == "QAM":
+        plot_constellation(symbols, MEDIA_PATH, filename="modulate_constellation.png")
+
+    # demodulation con ruido
+    demodulated_binary_vector = demodulate_symbols(received_symbols, modulation_type, M, code_label, original_length=len(binary_vector))
+    print(f"\nDemodulation successful: {np.array_equal(binary_vector, demodulated_binary_vector)}") 
+
+    if modulation_type == "QAM":
+        plot_constellation(received_symbols, MEDIA_PATH, filename="received_constellation.png")
+
+
 if __name__ == "__main__":
     with open(PATH, 'r') as f:
         text = f.read()
     
     codified_text = codificacion_fuente(text, return_codified=True)
     binary_vector = np.array([int(b) for b in ''.join(codified_text)]) # Vector of bits representing the codified text
-    codificacion_canal(binary_vector)
-    modulacion(binary_vector)
+    encoded_vector = codificacion_canal(binary_vector)
+    modulacion(encoded_vector)
     
 
