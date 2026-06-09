@@ -2,9 +2,9 @@ import numpy as np
 from data.config import PATH, OUTPUT_PATH, MEDIA_PATH
 from scripts.transmitter import (
     appearence_probs, entropy, huffman_algorithm, mean_length, minimum_length, shannon_range, codificate_text, 
-    modulate_symbols, calculate_energies, encode_block,codificate_channel
+    modulate_symbols, calculate_energies,codificate_channel
 )
-from scripts.receiver import decode_text, write_file,code_parameters,decodificate_channel,syndrome_table,syndrome,parity,demodulate_symbols
+from scripts.receiver import decode_text, write_file,code_parameters,decodificate_channel,syndrome_table,parity,demodulate_symbols
 from scripts.extras import plot_char_counts, print_dict, plot_constellation
 from scripts.channel import channel_effects
 
@@ -74,10 +74,6 @@ def codificacion_canal(binary_vector):
     print(f"Syndrome table:\n{S}")
     print(f"dmin: {dmin}", f"e: {e}", f"t: {t}", sep="\n")
 
-    print(f"Original vector:  {binary_vector}")
-    print(f"Encoded vector:   {encoded_vector}")
-    print(f"Decoded vector:   {decoded_vector}")
-
     return encoded_vector
 
 #MODULACION
@@ -100,8 +96,9 @@ def modulacion(binary_vector):
     Eb_N0_linear = Eb_mean / N0
     Eb_N0_dB = 10 * np.log10(Eb_N0_linear)
     print(f"\nEb/N0 = {Eb_N0_dB:.2f} dB")
-    
+
     received_symbols = channel_effects(symbols, N0)
+
 
     # Demodulation sin ruido
     demodulated_binary_vector = demodulate_symbols(symbols, modulation_type, M, code_label, original_length=len(binary_vector))
@@ -127,5 +124,7 @@ if __name__ == "__main__":
     binary_vector = np.array([int(b) for b in ''.join(codified_text)]) # Vector of bits representing the codified text
     encoded_vector = codificacion_canal(binary_vector)
     modulacion(encoded_vector)
+
+    
     
 

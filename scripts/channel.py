@@ -16,7 +16,8 @@ def awgn(N, N0):
 
 def atenuacion():
 
-    return np.random.uniform(0.5, 0.9)
+    #return np.random.uniform(0.5, 0.9)
+    return 1
 
 def channel_effects (symbols, N0):
 
