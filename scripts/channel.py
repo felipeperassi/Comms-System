@@ -12,7 +12,7 @@ def awgn(N, N0):
     noise_i = np.random.normal(0, sigma, N)
     noise_q = np.random.normal(0, sigma, N)
         
-    return noise_i + 1j * noise_q
+    return np.column_stack([noise_i, noise_q])
 
 def atenuacion():
 
