@@ -220,13 +220,14 @@ def modulate_symbols(binary_vector, modulation_type, M, code_label) -> np.array:
         Es_grid = np.mean(np.sum(constellation**2, axis=1))
         constellation *= np.sqrt(Es / Es_grid)
 
-        return constellation[symbols_idx] # (N x 2)
+        return constellation[symbols_idx], symbols_idx # (N x 2)
 
     if modulation_type == "FSK":
         coords = np.zeros((len(symbols), M))
         coords[np.arange(len(symbols)), symbols_idx] = np.sqrt(Es)
 
-        return coords # (N x M)
+        return coords, symbols_idx # (N x M)
+    
 
 def calculate_energies(modulated_signal, M) -> tuple:
     """
