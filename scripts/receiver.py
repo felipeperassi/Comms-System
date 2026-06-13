@@ -1,8 +1,6 @@
-
 import numpy as np
 
 from scripts.transmitter import amplitude_label
-import numpy as np
 
 from scripts.transmitter import encode_block
 

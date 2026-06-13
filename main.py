@@ -4,7 +4,7 @@ from scripts.transmitter import (
     appearence_probs, entropy, huffman_algorithm, mean_length, minimum_length, shannon_range, codificate_text, 
     modulate_symbols, calculate_energies,codificate_channel
 )
-from scripts.receiver import decode_text, write_file,code_parameters,decodificate_channel,syndrome_table,parity,demodulate_symbols
+from scripts.receiver import decode_text, write_file, code_parameters, decodificate_channel, syndrome_table, parity, demodulate_symbols, symbol_error_probability, bit_error_probability
 from scripts.extras import plot_char_counts, print_dict, plot_constellation
 from scripts.channel import channel_effects
 
@@ -82,7 +82,7 @@ def modulacion(binary_vector):
 
     # Modulation
     modulation_type, M, code_label = "QAM", 16, "Binary"
-    symbols = modulate_symbols(binary_vector, modulation_type, M, code_label)
+    symbols, transmitted_idx = modulate_symbols(binary_vector, modulation_type, M, code_label)   
     print(f"\nConstellation points for {modulation_type} modulation with M={M} and {code_label} code:")
     print(symbols)
 
@@ -109,11 +109,17 @@ def modulacion(binary_vector):
         plot_constellation(symbols, MEDIA_PATH, filename="modulate_constellation.png")
 
     # demodulation con ruido
-    demodulated_binary_vector = demodulate_symbols(received_symbols, modulation_type, M, code_label, original_length=len(binary_vector))
+    demodulated_binary_vector_noise , demodulated_idx_noise  = demodulate_symbols(received_symbols, modulation_type, M, code_label, original_length=len(binary_vector))
     print(f"\nDemodulation successful: {np.array_equal(binary_vector, demodulated_binary_vector)}") 
 
     if modulation_type == "QAM":
         plot_constellation(received_symbols, MEDIA_PATH, filename="received_constellation.png")
+
+    Pe_simbolo = symbol_error_probability(transmitted_idx, demodulated_idx_noise)
+    Pb_bit = bit_error_probability(binary_vector, demodulated_binary_vector_noise)
+
+    print(f"\nProbabilidad de error de símbolo (Pe): {Pe_simbolo:.6f}")
+    print(f"Probabilidad de error de bit (Pb): {Pb_bit:.6f}")
 
 
 if __name__ == "__main__":
