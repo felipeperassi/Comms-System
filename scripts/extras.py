@@ -51,11 +51,12 @@ def print_dict(dict, title=None, sort=False) -> None:
         print(f"  {repr(key)}: {value}")
     print("-" * 30 + "\n")
 
-def plot_constellation(constellation, output_dir: str, filename: str = "constellation.png") -> None:
+def plot_constellation(modulation_type, constellation, output_dir: str, filename: str = "constellation.png") -> None:
     """
     Plots the constellation points and saves it as an image file.
 
     Parameters:
+        modulation_type: str, the type of modulation
         constellation: np.array of shape (N, 2) representing the constellation points
         output_dir: str, the directory where the image will be saved
         filename: str, the name of the image file (default: "constellation.png")
@@ -66,9 +67,13 @@ def plot_constellation(constellation, output_dir: str, filename: str = "constell
 
     ax.grid(alpha=0.3)              
     ax.scatter(constellation[:, 0], constellation[:, 1], marker="x")
-    ax.set_xlabel("In-phase")
-    ax.set_ylabel("Quadrature")
-    ax.set_title("Constellation Diagram")
+    if modulation_type == "QAM":
+        ax.set_xlabel("In-phase")
+        ax.set_ylabel("Quadrature")
+    elif modulation_type == "FSK":
+        ax.set_xlabel("$\psi_1(t) = \sqrt{2/T_b} cos(\omega_1 t)$")
+        ax.set_ylabel("$\psi_2(t) = \sqrt{2/T_b} cos(\omega_2 t)$")
+    ax.set_title(f"Constellation Diagram - {modulation_type}")
     ax.axis('equal')
 
     os.makedirs(output_dir, exist_ok=True)

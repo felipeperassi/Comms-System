@@ -29,7 +29,8 @@ def codificacion_fuente(text, return_codified=False):
 
     mean_len, min_len = mean_length(code_dict, probs_dict), minimum_length(code_dict)
     print(f"Mean code length: {mean_len:.3f} bits/symbol", 
-           f"Minimum code length: {min_len:.3f} bits/symbol", sep="\n")
+           f"Minimum code length: {min_len:.3f} bits/symbol", 
+           f"Efficiency: {entropy_value / mean_len:.3f}", sep="\n")
 
     # Codification and decoding
     codified_text = codificate_text(text, code_dict)
@@ -81,7 +82,8 @@ def codificacion_canal(binary_vector):
 def modulacion(binary_vector):
 
     # Modulation
-    modulation_type, M, code_label = "QAM", 16, "Binary"
+    #modulation_type, M, code_label = "QAM", 16, "Binary"
+    modulation_type, M, code_label = "FSK", 2, "Binary"
     symbols, transmitted_idx = modulate_symbols(binary_vector, modulation_type, M, code_label)   
     print(f"\nConstellation points for {modulation_type} modulation with M={M} and {code_label} code:")
     print(symbols)
@@ -104,16 +106,15 @@ def modulacion(binary_vector):
     demodulated_binary_vector = demodulate_symbols(symbols, modulation_type, M, code_label, original_length=len(binary_vector))
     print(f"\nDemodulation successful: {np.array_equal(binary_vector, demodulated_binary_vector)}")
 
-    # Plot constellation if modulation is QAM (FSK w/ M=2 can be plotted as well, it can be implemented)
-    if modulation_type == "QAM":
-        plot_constellation(symbols, MEDIA_PATH, filename="modulate_constellation.png")
+    # Plot constellation (Transmitted)
+    plot_constellation(modulation_type, symbols, MEDIA_PATH, filename=f"{modulation_type}_modulate_constellation.png")
 
     # demodulation con ruido
     demodulated_binary_vector_noise , demodulated_idx_noise  = demodulate_symbols(received_symbols, modulation_type, M, code_label, original_length=len(binary_vector))
     print(f"\nDemodulation successful: {np.array_equal(binary_vector, demodulated_binary_vector)}") 
 
-    if modulation_type == "QAM":
-        plot_constellation(received_symbols, MEDIA_PATH, filename="received_constellation.png")
+    # Plot constellation (Received)
+    plot_constellation(modulation_type, received_symbols, MEDIA_PATH, filename=f"{modulation_type}_received_constellation.png")
 
     Pe_simbolo = symbol_error_probability(transmitted_idx, demodulated_idx_noise)
     Pb_bit = bit_error_probability(binary_vector, demodulated_binary_vector_noise)
