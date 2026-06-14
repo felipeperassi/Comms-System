@@ -8,11 +8,48 @@ from scripts.receiver import decode_text, write_file, code_parameters, decodific
 from scripts.extras import plot_char_counts, print_dict, plot_constellation
 from scripts.channel import channel_effects
 
-#CODIFICACION DE CANAL
+def transmitter_pass(text, channel_coding=False, k=None, n=None, G=None, modulation_type="QAM", M=16, code_label="Binary"):
 
-def codificacion_canal(binary_vector):
+    # Source codification
+    probs_dict, char_counts_dict = appearence_probs(text)
+    code_dict = huffman_algorithm(probs_dict)
+    codified_text = codificate_text(text, code_dict) # ['10011100', '1111111', ... ] for each char in the text 
+  
+    # Adapt the output of codification to be a binary vector (list of 0s and 1s)
+    binary_vector = np.array([int(bit) for symbol in codified_text for bit in symbol]) 
+
+    # Channel coding (if enabled)
+    if channel_coding and (G is None or k is None or n is None):
+        raise ValueError("channel_coding=True requires G, k and n.")
     
-    # Parámetros del código
+    encoded_vector = codificate_channel(binary_vector, G, k, n) if channel_coding else binary_vector
+
+    # Modulation
+    mod_symbols, mod_symbol_idxs = modulate_symbols(encoded_vector, modulation_type=modulation_type, M=M, code_label=code_label)
+
+    return binary_vector, mod_symbols, mod_symbol_idxs
+
+def receiver_pass(channel_symbols, binary_vector_length, channel_coding=False, k=None, n=None, G=None, modulation_type="QAM", M=16, code_label="Binary"):
+
+    # Channel coding parameters (if enabled)
+    if channel_coding and (G is None or k is None or n is None):
+        raise ValueError("channel_coding=True requires G, k and n.")
+    
+    # Demodulation
+    demod_symbols, demod_symbol_idxs = demodulate_symbols(channel_symbols, modulation_type=modulation_type, M=M, code_label=code_label, original_length=binary_vector_length)
+
+    # Channel decoding (if enabled)
+    H = parity(G, k, n)
+    S = syndrome_table(H, n)
+    decoded_vector = decodificate_channel(demod_symbols, H, S, k, n) if channel_coding else demod_symbols
+
+    return decoded_vector, demod_symbols
+
+if __name__ == "__main__":
+    with open(TXT_PATH, 'r') as f:
+        text = f.read()
+    
+    # Given parameters
     k = 4
     n = 8
     G = np.array([
@@ -22,76 +59,38 @@ def codificacion_canal(binary_vector):
         [0, 1, 1, 1, 0, 0, 0, 1]
     ], dtype=int)
 
-    # Transmisor
-    encoded_vector = codificate_channel(binary_vector, G, k, n)
+    # Vectors for performance evaluation
+    EbN0_vec = np.arange(0, 11, 1)  
+    modulation_types = ["QAM", "FSK"]
+    M_vec = [2, 4, 8, 16]
 
-    # Receptor
-    H = parity(G, k, n)
-    S = syndrome_table(H, n)
-    decoded_vector = decodificate_channel(encoded_vector, H, S, k, n)
-    dmin, e, t = code_parameters(G, k, n)
+    symbol_error = []
+    bit_error = []
 
-    print(f"H:\n{H}")
-    print(f"Syndrome table:\n{S}")
-    print(f"dmin: {dmin}", f"e: {e}", f"t: {t}", sep="\n")
+    # Loop for evaluating performance across different EbN0s, modulation types and constellation sizes
+    for EbN0 in EbN0_vec:
+        for modulation_type in modulation_types:
+            for M in M_vec:
+                print(f"----- Evaluating {modulation_type} with M={M} at EbN0={EbN0} dB -----")
 
-    return encoded_vector
+                # Transmitter pass
+                binary_vector, mod_symbols, mod_symbol_idxs = transmitter_pass(text, channel_coding=True, k=k, n=n, G=G, modulation_type=modulation_type, M=M, code_label="Binary")
 
-#MODULACION
+                # Channel effects
+                Eb = 1  # Energy per bit
+                EbN0_linear = 10 ** (EbN0 / 10)  # Convert dB to linear scale
+                N_0 = Eb / EbN0_linear
 
-def modulacion(binary_vector):
+                channel_symbols = channel_effects(mod_symbols, N_0)
 
-    # Modulation
-    #modulation_type, M, code_label = "QAM", 16, "Binary"
-    modulation_type, M, code_label = "FSK", 2, "Binary"
-    symbols, transmitted_idx = modulate_symbols(binary_vector, modulation_type, M, code_label)   
-    print(f"\nConstellation points for {modulation_type} modulation with M={M} and {code_label} code:")
-    print(symbols)
+                # Receiver pass
+                decoded_vector, demod_symbols_idx = receiver_pass(channel_symbols, len(binary_vector), channel_coding=True, k=k, n=n, G=G, modulation_type=modulation_type, M=M, code_label="Binary")
 
-    # Calculate energy
-    Es, Eb = calculate_energies(symbols, M)
-    Eb_mean = np.mean(Eb)
-    print(f"\nEnergy per bit (Eb): {Eb}", f"Energy per symbol (Es): {Es}", sep="\n")
+                # Error evaluation
+                Pe = symbol_error_probability(mod_symbol_idxs, demod_symbols_idx)
+                Pb = bit_error_probability(binary_vector, decoded_vector)
+                print(f"SNR: {EbN0} dB - Pe: {Pe:.4f}, Pb: {Pb:.4f}")
 
-    # Channel effects
-    N0 = 0.157 # Noise power spectral density
-    Eb_N0_linear = Eb_mean / N0
-    Eb_N0_dB = 10 * np.log10(Eb_N0_linear)
-    print(f"\nEb/N0 = {Eb_N0_dB:.2f} dB")
-
-    received_symbols = channel_effects(symbols, N0)
-
-
-    # Demodulation sin ruido
-    demodulated_binary_vector = demodulate_symbols(symbols, modulation_type, M, code_label, original_length=len(binary_vector))
-    print(f"\nDemodulation successful: {np.array_equal(binary_vector, demodulated_binary_vector)}")
-
-    # Plot constellation (Transmitted)
-    plot_constellation(modulation_type, symbols, MEDIA_PATH, filename=f"{modulation_type}_modulate_constellation.png")
-
-    # demodulation con ruido
-    demodulated_binary_vector_noise , demodulated_idx_noise  = demodulate_symbols(received_symbols, modulation_type, M, code_label, original_length=len(binary_vector))
-    print(f"\nDemodulation successful: {np.array_equal(binary_vector, demodulated_binary_vector)}") 
-
-    # Plot constellation (Received)
-    plot_constellation(modulation_type, received_symbols, MEDIA_PATH, filename=f"{modulation_type}_received_constellation.png")
-
-    Pe_simbolo = symbol_error_probability(transmitted_idx, demodulated_idx_noise)
-    Pb_bit = bit_error_probability(binary_vector, demodulated_binary_vector_noise)
-
-    print(f"\nProbabilidad de error de símbolo (Pe): {Pe_simbolo:.6f}")
-    print(f"Probabilidad de error de bit (Pb): {Pb_bit:.6f}")
-
-
-if __name__ == "__main__":
-    with open(TXT_PATH, 'r') as f:
-        text = f.read()
-    
-    # codified_text = codificacion_fuente(text, return_codified=True)
-    # binary_vector = np.array([int(b) for b in ''.join(codified_text)]) # Vector of bits representing the codified text
-    # encoded_vector = codificacion_canal(binary_vector)
-    # modulacion(encoded_vector)
-
-    
-    
-
+                symbol_error.append((EbN0, modulation_type, M, Pe)), bit_error.append((EbN0, modulation_type, M, Pb))
+            
+    # Plotting results
