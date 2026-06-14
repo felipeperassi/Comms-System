@@ -1,5 +1,7 @@
 import numpy as np
 
+# TP3
+
 def awgn(shape, N_0) -> np.ndarray:
     """
     Generates Additive White Gaussian Noise (AWGN) for a given number of samples and noise power spectral density.
@@ -25,7 +27,6 @@ def channel_attenuation() -> float:
     """
     return np.random.uniform(0.5, 0.9)
 
-
 def channel_effects (mod_symbols, N_0) -> np.ndarray:
     """
     Simulates the effects of the channel on the transmitted symbols by applying attenuation and adding AWGN noise.
@@ -38,6 +39,3 @@ def channel_effects (mod_symbols, N_0) -> np.ndarray:
         np.ndarray: the received symbols after channel effects
     """  
     return mod_symbols * channel_attenuation() + awgn(mod_symbols.shape, N_0)
-
-
-    

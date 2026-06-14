@@ -7,7 +7,16 @@ from scripts.extras import plot_constellation
 
 MEDIA_CHANNEL_PATH = MEDIA_PATH / "channel_effects"
 
-def channel(binary_vector, modulation_type="QAM", M=16, code_label="Binary"):
+def channel(binary_vector, modulation_type="QAM", M=16, code_label="Binary") -> None:
+    """
+    Simulates the effects of the communication channel on the transmitted symbols.
+    
+    Parameters:
+        binary_vector: np.array, the binary vector to be transmitted
+        modulation_type: str, the type of modulation ("QAM" or "FSK")
+        M: int, the number of symbols in the constellation
+        code_label: str, the type of code ("Gray" or "Binary")
+    """
 
     print(f"\n ------ Modulation type: {modulation_type}, M: {M}, Code label: {code_label} ------")
 
