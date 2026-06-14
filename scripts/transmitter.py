@@ -66,8 +66,8 @@ def huffman_algorithm(probs_dict) -> dict:
         if node[1] is not None: # sym != None -> leaf node  
             code_dict[node[1]] = prefix
         else: # sym = None -> internal node
-            stack.append((node[3], prefix + "1"))
-            stack.append((node[2], prefix + "0"))
+            stack.append((node[3], prefix + "0"))
+            stack.append((node[2], prefix + "1"))
 
     return code_dict
 
