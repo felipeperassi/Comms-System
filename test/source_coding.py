@@ -1,13 +1,15 @@
 import numpy as np
 
-from data.config import OUTPUT_PATH, MEDIA_PATH, TXT_PATH
+from data.config import MEDIA_PATH, TXT_PATH
 from scripts.transmitter import (
     appearence_probs, entropy, huffman_algorithm, mean_length, 
     minimum_length, shannon_range, codificate_text
 )
 from scripts.receiver import decode_text, write_file
 from scripts.extras import plot_char_counts, print_dict
-    
+
+MEDIA_CODING_PATH = MEDIA_PATH / "coding"
+
 def source_coding(text : str) -> None:
     """
     Performs source encoding & decoding using Huffman coding for a given text.
@@ -20,7 +22,7 @@ def source_coding(text : str) -> None:
     probs_dict, char_counts_dict = appearence_probs(text)
     print_dict(char_counts_dict, "Character counts:", sort=True)
     print_dict(probs_dict, "Appearance probabilities:", sort=True)
-    plot_char_counts(char_counts_dict, MEDIA_PATH)
+    plot_char_counts(char_counts_dict, MEDIA_CODING_PATH)
     
     # Huffman coding
     code_dict = huffman_algorithm(probs_dict)
@@ -39,7 +41,7 @@ def source_coding(text : str) -> None:
     # Codification and decoding
     codified_text = codificate_text(text, code_dict)
     decoded_text = decode_text(codified_text, code_dict)
-    write_file(OUTPUT_PATH / "decoded_output.txt", decoded_text)
+    write_file(MEDIA_CODING_PATH / "decoded_output.txt", decoded_text)
 
     # Sentence to test the codification and decoding
     text_sentence = text.split('.')[1][1::] + '.' # take the first sentence of the text, removing the leading space and adding the dot at the end
