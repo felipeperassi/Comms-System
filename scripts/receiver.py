@@ -1,8 +1,9 @@
 import numpy as np
 
 from scripts.transmitter import amplitude_label
-
 from scripts.transmitter import encode_block
+
+# ----------------------------------- TP1 -----------------------------------
 
 def decode_text(codified_codes, code_dict) -> list:
     """
@@ -30,6 +31,8 @@ def write_file(filename, decoded_list) -> None:
     with open(filename, 'w') as f:
         f.write(content)
 
+# ----------------------------------- TP2 -----------------------------------
+
 def decimal2binary(decimal_number, width) -> np.array:
     """
     Converts a decimal number to a binary vector with a fixed width.
@@ -43,8 +46,6 @@ def decimal2binary(decimal_number, width) -> np.array:
     """
     return np.array(list(np.binary_repr(decimal_number, width=width)), dtype=int)
 
-
-# TP2
 def demodulate_symbols(received_signal, modulation_type, M, code_label, original_length=None) -> np.array:
     """
     Demodulates a received signal and recovers the transmitted binary vector.
@@ -136,43 +137,90 @@ def bit_error_probability(transmitted_bits, received_bits) -> float:
     """
     return np.sum(transmitted_bits != received_bits) / len(transmitted_bits)
 
-# TP3
+# ----------------------------------- TP4 -----------------------------------
 
 def parity(G, k, n) -> np.array:
-    P = G[:, :n-k]        #G tiene la identidad en el lado derecho     # primeras n-k columnas (la parte P)
+    """
+    Constructs the parity-check matrix H from the generator matrix G.
+    
+    Parameters:
+        G: np.array, the generator matrix of size (k, n)
+        k: int, the number of message bits
+        n: int, the total number of bits in the codeword (message + parity)
+    
+    Returns:
+        np.array: the parity-check matrix H of size (n-k, n)
+    """
+    P = G[:, :n-k]  # G = [P | I(k)] 
     H = np.hstack((P.T, np.eye(n-k, dtype=int))) # H = [P^T | I(n-k)]
     return H
 
 def syndrome(U, H) -> np.array:
-    return tuple(np.mod(U @ H.T, 2).astype(int).tolist()) # calculo el síndrome como U * H^T mod 2, y lo convierto a tupla para usarlo como clave en el diccionario
+    """
+    Calculates the syndrome of a received block U using the parity-check matrix H.
+    
+    Parameters:
+        U: np.array, the received block of n bits
+        
+    Returns:
+        np.array: the syndrome of U
+    """
+    return tuple(np.mod(U @ H.T, 2).astype(int).tolist()) # To tuple for hashability in syndrome table
 
 def syndrome_table(H, n) -> dict:
-
+    """
+    Constructs a syndrome table for single-bit error patterns based on the parity-check matrix H.
+    
+    Parameters:
+        H: np.array, the parity-check matrix of size (n-k, n)
+        n: int, the total number of bits in the codeword (message + parity)
+    
+    Returns:
+        dict: a dictionary mapping syndromes to their corresponding single-bit error patterns
+    """
     table = {}
-
     for i in range(n):
-        error = np.zeros(n, dtype=int)  # patrón de error
-        error[i] = 1                    # error en el bit i
+        error = np.zeros(n, dtype=int)  # Error pattern
+        error[i] = 1                    # Error in bit i
 
-        s = syndrome(error, H)  # síndrome
+        s = syndrome(error, H)  # Syndrome for this error pattern
         table[s] = error
 
-    return table #me devuelve un diccionario con el síndrome como clave y el patrón de error como valor
+    return table 
 
 def decode_block(U, H, S, k) -> np.array:
-    #Decodifica y corrige una palabra de n bits.
+    """
+    Decodes a received block U using the parity-check matrix H and the syndrome table S.
+    
+    Parameters:
+        U: np.array, the received block of n bits
+        H: np.array, the parity-check matrix of size (n-k, n)
+        S: dict, the syndrome table mapping syndromes to error patterns
+        k: int, the number of message bits (the last k bits of the codeword)
+    
+    Returns:
+        np.array: the decoded message bits (the last k bits of the corrected codeword)
+    """
+    s = syndrome(U, H) # Calculate the syndrome of the received block
+    if s in S: # If the syndrome corresponds to a known error pattern
+        U = np.mod(U + S[s], 2)
 
-    s = syndrome(U, H)  # calculo el síndrome
-
-    if s in S:
-        U = np.mod(U + S[s], 2)  # corrijo el error
-
-    return U[-k:]  # devuelvo los últimos k bits (mensaje original)
+    return U[-k:] 
 
 def decodificate_channel(binary_vector, H, S, k, n) -> np.array:
+    """
+    Decodes a binary vector that has been encoded with a linear block code and potentially corrupted by errors.
     
-    #Organiza el vector binario en bloques de n bits y decodifica cada uno.
-
+    Parameters:
+        binary_vector: np.array, the received binary vector to be decoded
+        H: np.array, the parity-check matrix of size (n-k, n)
+        S: dict, the syndrome table mapping syndromes to error patterns
+        k: int, the number of message bits (the last k bits of the codeword)
+        n: int, the total number of bits in the codeword (message + parity)
+    
+    Returns:
+        np.array: the decoded binary vector containing only the message bits
+    """
     blocks = binary_vector.reshape(-1, n)
     decoded_blocks = np.array([decode_block(block, H, S, k) for block in blocks])
 
@@ -180,20 +228,27 @@ def decodificate_channel(binary_vector, H, S, k, n) -> np.array:
 
 
 def code_parameters(G, k, n) -> tuple:
+    """
+    Calculates the minimum distance dmin, the maximum number of errors that can be detected e, and the maximum number of errors that can be corrected t for a linear block code defined by its generator matrix G.
     
-    ##Calcula la distancia mínima dmin, la cantidad máxima de errores a detectar e y a corregir t.
-
+    Parameters:
+        G: np.array, the generator matrix of size (k, n)
+        k: int, the number of message bits
+        n: int, the total number of bits in the codeword (message + parity)
+    
+    Returns:
+        tuple: (dmin, e, t) where dmin is the minimum distance, e is the maximum number of errors that can be detected, and t is the maximum number of errors that can be corrected
+    """
     codewords = []
-    for i in range(2**k): # genero todas las 2^k palabras código posibles
-        message = np.array(list(np.binary_repr(i, width=k)), dtype=int)  # convierte i a binario de k bits ydesp convierte el string a array
-        codeword = encode_block(message, k, n, G)
+    for i in range(2**k): # Generate all possible codewords by encoding all possible messages
+        message = np.array(list(np.binary_repr(i, width=k)), dtype=int)
+        codeword = encode_block(message, G)
         codewords.append(codeword)
 
-    # calculo el peso de cada palabra código (cantidad de 1s), sin contar la palabra cero
     weights = [np.sum(codeword) for codeword in codewords if np.sum(codeword) > 0]
 
     dmin = int(min(weights))
-    e = dmin - 1        # errores que puede detectar
-    t = (dmin - 1) // 2 # errores que puede corregir
+    e = dmin - 1            # Detectable errors
+    t = (dmin - 1) // 2     # Correctable errors
 
     return dmin, e, t

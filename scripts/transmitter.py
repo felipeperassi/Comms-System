@@ -1,6 +1,7 @@
 import numpy as np
 
-# TP1
+# ----------------------------------- TP1 -----------------------------------
+
 def appearence_probs(text) -> tuple:
   """
   Calculates the appearance probability of each character in a string.
@@ -122,7 +123,7 @@ def codificate_text(text, code_dict) -> list:
     """
     return [code_dict[char] for char in text]
 
-# TP2
+# ----------------------------------- TP2 -----------------------------------
 
 def gray2binary(binary_vector) -> np.array:
     """"
@@ -146,6 +147,7 @@ def binary2decimal(binary_vector) -> int:
 
     Parameters:
         binary_vector: np.array, the input vector of binary numbers (e.g., [1, 0, 1] for the binary number "101")
+
     Returns:
         int: the decimal number
     """
@@ -154,10 +156,12 @@ def binary2decimal(binary_vector) -> int:
 def amplitude_label(bits_axis, n_levels, code_label) -> float:
     """
     Converts a vector of binary_vector to an amplitude level based on the specified code label.
+
     Parameters:
         bits_axis: np.array, the input vector of binary_vector representing the symbol index
         n_levels: int, the number of amplitude levels (M)
         code_label: str, the type of code ("Gray" or "Binary")
+
     Returns:
         float: the amplitude level corresponding to the input binary_vector
     """
@@ -179,6 +183,7 @@ def modulate_symbols(binary_vector, modulation_type, M, code_label) -> tuple:
         modulation_type: str, the type of modulation ("QAM" or "FSK")
         M: int, the number of symbols in the constellation
         code_label: str, the type of code ("Gray" or "Binary")
+
     Returns:
         np.array: the modulated constellation points corresponding to the input characters
         np.array: the indices of the modulated symbols
@@ -228,7 +233,6 @@ def modulate_symbols(binary_vector, modulation_type, M, code_label) -> tuple:
         coords[np.arange(len(symbols)), symbols_idx] = np.sqrt(Es)
 
         return coords, symbols_idx # (N x M)
-    
 
 def calculate_energies(modulated_signal, M) -> tuple:
     """
@@ -237,6 +241,7 @@ def calculate_energies(modulated_signal, M) -> tuple:
     Parameters:
         modulated_signal: np.array, the input modulated signal (N x 2 for QAM or N x M for FSK)
         M: int, the number of symbols in the constellation
+
     Returns:
         tuple: (Es, Eb) where Es is the energy per symbol and Eb is the energy per bit
     """
@@ -253,6 +258,7 @@ def calculate_mean_energies(modulated_signal, M) -> tuple:
     Parameters:
         modulated_signal: np.array, the input modulated signal (N x 2 for QAM or N x M for FSK)
         M: int, the number of symbols in the constellation
+
     Returns:
         tuple: (Es_mean, Eb_mean) where Es_mean is the mean energy per symbol and Eb_mean is the mean energy per bit
     """
@@ -261,23 +267,41 @@ def calculate_mean_energies(modulated_signal, M) -> tuple:
 
     return np.mean(Es), np.mean(Eb)
 
-def encode_block(message, k, n, G) -> np.array:
+# ----------------------------------- TP4 -----------------------------------
+
+def encode_block(message, G) -> np.array:
+    """
+    Encodes a block of k bits into a codeword of n bits using the generator matrix G.
     
+    Parameters:
+        message: np.array, the input block of k bits (shape (k,))
+        G: np.array, the generator matrix of shape (k, n)
+
+    Returns:
+        np.array: the encoded codeword of n bits (shape (n,))
+    """
     #Codifica un mensaje de k bits en una palabra código de n bits.
 
     return np.mod(message @ G, 2)
 
 
 def codificate_channel(binary_vector, G, k, n) -> np.array:
+    """
+    Codifies a binary vector using the channel coding scheme defined by the generator matrix G.
     
-    #Organiza el vector binario en bloques de k bits y codifica cada uno.
+    Parameters:
+        binary_vector: np.array, the input binary vector to be codified
+        G: np.array, the generator matrix of shape (k, n)
+        k: int, the number of bits in each message block
+        n: int, the number of bits in each codeword
+    
+    Returns:
+        np.array: the codified binary vector
+    """
 
-    # Padding si el vector no es múltiplo de k
-    remainder = len(binary_vector) % k
-    if remainder != 0:
-        binary_vector = np.concatenate([binary_vector, np.zeros(k - remainder, dtype=int)]) #agrego los 0s si no es multiplo de k
+    if len(binary_vector) % k != 0: # Vector length must be a multiple of k
+        binary_vector = np.concatenate([binary_vector, np.zeros(k - len(binary_vector) % k, dtype=int)])
 
-    blocks = binary_vector.reshape(-1, k) #armo los bloques de k bits
-    encoded_blocks = np.array([encode_block(block, k, n, G) for block in blocks]) #codifico cada bloque con la función encode_block
-
+    blocks = binary_vector.reshape(-1, k) # k bits blocks (N x k)
+    encoded_blocks = np.array([encode_block(block, G) for block in blocks]) # Encode each block (N x n)
     return encoded_blocks.flatten()
