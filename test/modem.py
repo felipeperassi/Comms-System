@@ -1,5 +1,5 @@
 import numpy as np
-from data.config import TXT_PATH, OUTPUT_PATH, MEDIA_PATH
+from data.config import TXT_PATH, MEDIA_PATH
 from scripts.transmitter import appearence_probs, huffman_algorithm, codificate_text, modulate_symbols, calculate_mean_energies
 from scripts.receiver import demodulate_symbols
 from scripts.extras import plot_constellation
@@ -24,6 +24,7 @@ def modem(binary_vector, modulation_type="QAM", M=16, code_label="Binary"):
     print(f"\nMean energy per bit (Eb): {Eb_mean:.3f} (theoretical: {Eb_theo:.3f})",
             f"Mean energy per symbol (Es): {Es_mean:.3f} (theoretical: {Es_theo:.3f})", sep="\n")
      
+    # Demodulation without noise & error checking
     demod_symbols, demod_symbol_idxs = demodulate_symbols(mod_symbols, modulation_type, M, code_label, original_length=len(binary_vector))
     if np.array_equal(mod_symbol_idxs, demod_symbol_idxs) and np.array_equal(binary_vector, demod_symbols):
         print(f"\nDemodulation successful: All symbols correctly demodulated.")
@@ -31,24 +32,6 @@ def modem(binary_vector, modulation_type="QAM", M=16, code_label="Binary"):
         num_errors = np.sum(mod_symbol_idxs != demod_symbol_idxs)
         total_symbols = len(mod_symbol_idxs)
         print(f"\nDemodulation had errors: {num_errors} out of {total_symbols} symbols were incorrectly demodulated.")
-
-    # # Channel effects
-    # N0 = 0.157 # Noise power spectral density
-    # Eb_N0_linear = Eb_mean / N0
-    # Eb_N0_dB = 10 * np.log10(Eb_N0_linear)
-    # print(f"\nEb/N0 = {Eb_N0_dB:.2f} dB")
-
-    # received_symbols = channel_effects(symbols, N0)
-
-
-    # # Demodulation sin ruido
-    # demodulated_binary_vector = demodulate_symbols(symbols, modulation_type, M, code_label, original_length=len(binary_vector))
-    # print(f"\nDemodulation successful: {np.array_equal(binary_vector, demodulated_binary_vector)}")
-
-    
-    # # demodulation con ruido
-    # demodulated_binary_vector = demodulate_symbols(received_symbols, modulation_type, M, code_label, original_length=len(binary_vector))
-    # print(f"\nDemodulation successful: {np.array_equal(binary_vector, demodulated_binary_vector)}") 
 
 if __name__ == "__main__":
     with open(TXT_PATH, 'r') as f:
