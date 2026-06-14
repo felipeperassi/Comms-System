@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import matplotlib.pyplot as plt
 
 def plot_char_counts(char_counts: dict, output_dir: str, filename: str = "char_counts.png") -> None:
@@ -51,7 +52,7 @@ def print_dict(dict, title=None, sort=False) -> None:
         print(f"  {repr(key)}: {value}")
     print("-" * 30 + "\n")
 
-def plot_constellation(modulation_type, constellation, output_dir: str, filename: str = "constellation.png") -> None:
+def plot_constellation(modulation_type : str, constellation: np.array, output_dir: str, filename: str = "constellation.png") -> None:
     """
     Plots the constellation points and saves it as an image file.
 
