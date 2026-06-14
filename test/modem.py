@@ -62,6 +62,6 @@ if __name__ == "__main__":
     # Adapt the output of codification to be a binary vector (list of 0s and 1s)
     binary_vector = np.array([int(bit) for symbol in codified_text for bit in symbol]) # [1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, ... ]
 
-    # Test Modulation &  for both modulation types
+    # Test modulation & demodulation for both modulation types
     modem(binary_vector, modulation_type="QAM", M=16, code_label="Binary")
     modem(binary_vector, modulation_type="FSK", M=2, code_label="Binary")
