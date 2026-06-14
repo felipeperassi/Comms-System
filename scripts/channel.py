@@ -27,7 +27,7 @@ def channel_attenuation() -> float:
     """
     return np.random.uniform(0.5, 0.9)
 
-def channel_effects (mod_symbols, N_0) -> np.ndarray:
+def channel_effects(mod_symbols, N_0) -> np.ndarray:
     """
     Simulates the effects of the channel on the transmitted symbols by applying attenuation and adding AWGN noise.
     

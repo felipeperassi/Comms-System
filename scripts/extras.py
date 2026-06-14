@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from data.config import MEDIA_PATH
 from scripts.transmitter import amplitude_label
 
 def plot_char_counts(char_counts: dict, output_dir: str, filename: str = "char_counts.png") -> None:
@@ -89,7 +90,7 @@ def qam_reference(M: int, code_label: str) -> tuple:
 def plot_constellation(modulation_type : str, constellation: np.array, M: int, output_dir: str, code_label: str = "Binary", filename: str = "constellation.png") -> None:
     """
     Plots the constellation points and saves it as an image file. For QAM it also
-    draws the minimum-distance decision regions and the bit labels of each symbol.
+draws the minimum-distance decision regions and the bit labels of each symbol.
 
     Parameters:
         modulation_type: str, the type of modulation
@@ -148,3 +149,28 @@ def plot_constellation(modulation_type : str, constellation: np.array, M: int, o
     os.makedirs(output_dir, exist_ok=True)
     plt.savefig(os.path.join(output_dir, filename), dpi=150, bbox_inches="tight")
     plt.close()
+
+def plot_error_curve(EbN0_vec, theo_error, sim_error, title="", y_label=r"$P$", filename="error.png") -> None:
+    """
+    Plots theoretical and simulated error probability series as a function of Eb/N0
+
+    Parameters:
+        EbN0_vec: array-like, the Eb/N0 values in dB (x axis)
+        theo_error: array-like, the theoretical error probabilities
+        sim_error: array-like, the simulated error probabilities
+        title: str, the plot title
+        y_label: str, the y axis label (e.g. r"$P_e$" or r"$P_b$")
+        filename: str, the output image file name
+    """
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    ax.semilogy(EbN0_vec, theo_error, "-", label="Theoretical")
+    ax.semilogy(EbN0_vec, sim_error, "x-", label="Simulated")
+
+    ax.set(xlabel=r"$E_b/N_0$ [dB]", ylabel=y_label, title=title)
+    ax.grid(True, which="both", alpha=0.3)
+    ax.legend()
+
+    os.makedirs(MEDIA_PATH / "error_curves", exist_ok=True)
+    fig.savefig(MEDIA_PATH / "error_curves" / filename, dpi=150)
+    plt.close(fig)
