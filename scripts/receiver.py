@@ -111,18 +111,30 @@ def demodulate_symbols(received_signal, modulation_type, M, code_label, original
     return binary_vector, symbols_idx
 
 def symbol_error_probability(transmitted_idx, demodulated_idx) -> float:
+    """
+    Calculates the symbol error probability given the transmitted and demodulated symbol indices.
 
-    """Calculates the symbol error probability given the transmitted and demodulated symbol indices.""" 
-    """comparo las posiciones de los símbolos transmitidos modulados y demodulados, cuento cuántos errores hubo y divido por el total de símbolos
-      para obtener la probabilidad de error."""
-    
-    errors = np.sum(transmitted_idx != demodulated_idx)
-    return errors / len(transmitted_idx)
+    Parameters:
+        transmitted_idx: np.array, the indices of the transmitted symbols
+        demodulated_idx: np.array, the indices of the demodulated symbols
+
+    Returns:
+        float: the symbol error probability
+    """
+    return np.sum(transmitted_idx != demodulated_idx) / len(transmitted_idx)
 
 def bit_error_probability(transmitted_bits, received_bits) -> float:
-    """Calculates the bit error probability given the transmitted and received binary vectors."""
-    errors = np.sum(transmitted_bits != received_bits)
-    return errors / len(transmitted_bits)
+    """
+    Calculates the bit error probability given the transmitted and received binary vectors.
+    
+    Parameters:
+        transmitted_bits: np.array, the original transmitted binary vector
+        received_bits: np.array, the binary vector obtained after demodulation
+    
+    Returns:
+        float: the bit error probability
+    """
+    return np.sum(transmitted_bits != received_bits) / len(transmitted_bits)
 
 # TP3
 
