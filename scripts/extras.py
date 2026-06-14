@@ -52,19 +52,23 @@ def print_dict(dict, title=None, sort=False) -> None:
         print(f"  {repr(key)}: {value}")
     print("-" * 30 + "\n")
 
-def plot_constellation(modulation_type : str, constellation: np.array, output_dir: str, filename: str = "constellation.png") -> None:
+def plot_constellation(modulation_type : str, constellation: np.array, M: int, output_dir: str, filename: str = "constellation.png") -> None:
     """
     Plots the constellation points and saves it as an image file.
 
     Parameters:
         modulation_type: str, the type of modulation
         constellation: np.array of shape (N, 2) representing the constellation points
+        M: int, the number of symbols in the modulation scheme (e.g., M=16 for 16-QAM)
         output_dir: str, the directory where the image will be saved
         filename: str, the name of the image file (default: "constellation.png")
     """
     supported_modulations = ["QAM", "FSK"]
     if modulation_type not in supported_modulations:
         raise ValueError(f"Unsupported modulation type: {modulation_type}. Supported types are: {supported_modulations}")
+    
+    if modulation_type == "FSK" and M != 2:
+        raise ValueError(f"FSK modulation only supports M=2. Received M={M}.")
     
     plt.figure(figsize=(6, 6))
     ax = plt.gca()

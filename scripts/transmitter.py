@@ -170,7 +170,7 @@ def amplitude_label(bits_axis, n_levels, code_label) -> float:
     pos = binary2decimal(bits_axis)
     return 2 * pos - (n_levels - 1)
 
-def modulate_symbols(binary_vector, modulation_type, M, code_label) -> np.array:
+def modulate_symbols(binary_vector, modulation_type, M, code_label) -> tuple:
     """
     Modulates a binary vector into a constellation based on the specified modulation type, M-ary level and code label.
 
@@ -181,6 +181,7 @@ def modulate_symbols(binary_vector, modulation_type, M, code_label) -> np.array:
         code_label: str, the type of code ("Gray" or "Binary")
     Returns:
         np.array: the modulated constellation points corresponding to the input characters
+        np.array: the indices of the modulated symbols
     """
     supported_types = ["QAM", "FSK"]
     if modulation_type not in supported_types:
@@ -244,6 +245,21 @@ def calculate_energies(modulated_signal, M) -> tuple:
     Eb = Es / np.log2(M) # Energy per bit
 
     return Es, Eb
+
+def calculate_mean_energies(modulated_signal, M) -> tuple:
+    """
+    Calculates the mean energies of a modulated signal.
+
+    Parameters:
+        modulated_signal: np.array, the input modulated signal (N x 2 for QAM or N x M for FSK)
+        M: int, the number of symbols in the constellation
+    Returns:
+        tuple: (Es_mean, Eb_mean) where Es_mean is the mean energy per symbol and Eb_mean is the mean energy per bit
+    """
+
+    Es, Eb = calculate_energies(modulated_signal, M)
+
+    return np.mean(Es), np.mean(Eb)
 
 def encode_block(message, k, n, G) -> np.array:
     
