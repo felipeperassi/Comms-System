@@ -22,7 +22,7 @@ def channel(binary_vector, modulation_type="QAM", M=16, code_label="Binary") -> 
 
     # Calculate N0 for a given Eb/N0 in dB
     Eb = 1
-    EbN0_dB = 2
+    EbN0_dB = 6
     EbN0_linear = 10**(EbN0_dB/10)
 
     N_0 = Eb / EbN0_linear
