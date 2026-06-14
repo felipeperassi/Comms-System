@@ -4,6 +4,8 @@ from scripts.transmitter import appearence_probs, huffman_algorithm, codificate_
 from scripts.receiver import demodulate_symbols
 from scripts.extras import plot_constellation
 
+MEDIA_MODEM_PATH = MEDIA_PATH / "modem"
+
 def modem(binary_vector, modulation_type="QAM", M=16, code_label="Binary"):
 
     print(f"\n ------ Modulation type: {modulation_type}, M: {M}, Code label: {code_label} ------")
@@ -13,7 +15,7 @@ def modem(binary_vector, modulation_type="QAM", M=16, code_label="Binary"):
     print(f"\nConstellation points for {modulation_type} modulation with M={M} and {code_label} code:", mod_symbols, sep="\n")
 
     # Generate constellation plot
-    plot_constellation(modulation_type, mod_symbols, M, MEDIA_PATH, filename=f"{modulation_type}_{M}_{code_label}_constellation.png")
+    plot_constellation(modulation_type, mod_symbols, M, MEDIA_MODEM_PATH, filename=f"{modulation_type}_{M}_{code_label}_constellation.png")
 
     # Calculate mean energies
     Eb_theo = 1
