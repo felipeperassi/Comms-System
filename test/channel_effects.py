@@ -1,6 +1,6 @@
 import numpy as np
 from data.config import TXT_PATH, MEDIA_PATH
-from scripts.transmitter import appearence_probs, huffman_algorithm, codificate_text, modulate_symbols, calculate_mean_energies
+from scripts.transmitter import appearence_probs, huffman_algorithm, codificate_text, modulate_symbols
 from scripts.receiver import demodulate_symbols
 from scripts.channel import channel_effects
 from scripts.extras import plot_constellation

@@ -1,5 +1,5 @@
 import numpy as np
-from data.config import TXT_PATH, MEDIA_PATH
+from data.config import TXT_PATH
 from scripts.transmitter import appearence_probs, huffman_algorithm, codificate_text, codificate_channel
 from scripts.receiver import decodificate_channel, parity, syndrome_table, code_parameters
 from scripts.extras import print_dict

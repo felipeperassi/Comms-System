@@ -1,5 +1,3 @@
-import numpy as np
-
 from data.config import MEDIA_PATH, TXT_PATH
 from scripts.transmitter import (
     appearence_probs, entropy, huffman_algorithm, mean_length, 
