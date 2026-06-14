@@ -33,13 +33,13 @@ def channel(binary_vector, modulation_type="QAM", M=16, code_label="Binary") -> 
     print(f"\nConstellation points for {modulation_type} modulation with M={M} and {code_label} code:", mod_symbols, sep="\n")
 
     # Plot transmitted constellation
-    plot_constellation(modulation_type, mod_symbols, M, MEDIA_CHANNEL_PATH / f"{EbN0_dB}dB", filename=f"{modulation_type}_{M}_{code_label}_constellation_transmitted.png")
+    plot_constellation(modulation_type, mod_symbols, M, MEDIA_CHANNEL_PATH / f"{EbN0_dB}dB", code_label=code_label, filename=f"{modulation_type}_{M}_{code_label}_constellation_transmitted.png")
 
     # Channel effects
     channel_symbols = channel_effects(mod_symbols, N_0)    
      
     # Plot received constellation
-    plot_constellation(modulation_type, channel_symbols, M, MEDIA_CHANNEL_PATH / f"{EbN0_dB}dB", filename=f"{modulation_type}_{M}_{code_label}_constellation_received.png")
+    plot_constellation(modulation_type, channel_symbols, M, MEDIA_CHANNEL_PATH / f"{EbN0_dB}dB", code_label=code_label, filename=f"{modulation_type}_{M}_{code_label}_constellation_received.png")
 
     # Demodulation without channel effects & error checking
     demod_symbols, demod_symbol_idxs = demodulate_symbols(mod_symbols, modulation_type, M, code_label, original_length=len(binary_vector))

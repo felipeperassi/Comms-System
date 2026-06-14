@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from scripts.transmitter import amplitude_label
 
 def plot_char_counts(char_counts: dict, output_dir: str, filename: str = "char_counts.png") -> None:
     """
@@ -52,33 +53,92 @@ def print_dict(dict, title=None, sort=False) -> None:
         print(f"  {repr(key)}: {value}")
     print("-" * 30 + "\n")
 
-def plot_constellation(modulation_type : str, constellation: np.array, M: int, output_dir: str, filename: str = "constellation.png") -> None:
+def qam_reference(M: int, code_label: str) -> tuple:
     """
-    Plots the constellation points and saves it as an image file.
+    Reconstructs the full normalized M-QAM reference constellation together with
+    the bit label of each point, matching the transmitter's grid in
+    modulate_symbols. The label is the k-bit word that maps to that point; the
+    code_label ("Binary" or "Gray") only affects the point positions.
+
+    Parameters:
+        M: int, the number of symbols in the constellation
+        code_label: str, the type of code ("Gray" or "Binary")
+    Returns:
+        tuple: (points, labels) where points is an (M, 2) array of energy-
+               normalized I/Q coordinates and labels is a list of k-bit strings
+    """
+    k = int(np.log2(M))
+    kI, kQ = int(np.ceil(k / 2)), int(np.floor(k / 2))
+    MI, MQ = 2 ** kI, 2 ** kQ
+
+    points = np.zeros((M, 2))
+    labels = []
+    for number in range(M):
+        bits = np.array(list(np.binary_repr(number, width=k)), dtype=int)
+        coordI = amplitude_label(bits[:kI], MI, code_label)
+        coordQ = amplitude_label(bits[kI:], MQ, code_label)
+        points[number] = [coordI, coordQ]
+        labels.append(np.binary_repr(number, width=k))
+
+    Es = k  # Eb = 1, so Es = Eb * k = k
+    Es_grid = np.mean(np.sum(points ** 2, axis=1))
+    points *= np.sqrt(Es / Es_grid)
+
+    return points, labels
+
+def plot_constellation(modulation_type : str, constellation: np.array, M: int, output_dir: str, code_label: str = "Binary", filename: str = "constellation.png") -> None:
+    """
+    Plots the constellation points and saves it as an image file. For QAM it also
+    draws the minimum-distance decision regions and the bit labels of each symbol.
 
     Parameters:
         modulation_type: str, the type of modulation
         constellation: np.array of shape (N, 2) representing the constellation points
         M: int, the number of symbols in the modulation scheme (e.g., M=16 for 16-QAM)
         output_dir: str, the directory where the image will be saved
+        code_label: str, the type of code ("Gray" or "Binary"), used for QAM labels
         filename: str, the name of the image file (default: "constellation.png")
     """
     supported_modulations = ["QAM", "FSK"]
     if modulation_type not in supported_modulations:
         raise ValueError(f"Unsupported modulation type: {modulation_type}. Supported types are: {supported_modulations}")
-    
+
     if modulation_type == "FSK" and M != 2:
         raise ValueError(f"FSK modulation only supports M=2. Received M={M}.")
-    
+
     plt.figure(figsize=(6, 6))
     ax = plt.gca()
-    ax.set_axisbelow(True)         
+    ax.set_axisbelow(True)
 
-    ax.grid(alpha=0.3)              
+    ax.grid(alpha=0.3)
     ax.scatter(constellation[:, 0], constellation[:, 1], marker="x")
     if modulation_type == "QAM":
         ax.set_xlabel("In-phase")
         ax.set_ylabel("Quadrature")
+
+        # Reference constellation (receiver's decision grid) with bit labels.
+        ref_points, ref_labels = qam_reference(M, code_label)
+
+        # Decision regions: midpoints between adjacent amplitude levels. The QAM
+        # grid is separable in I/Q, so the optimum (minimum-distance) regions are
+        # bounded by vertical and horizontal lines.
+        levels_I = np.unique(np.round(ref_points[:, 0], 9))
+        levels_Q = np.unique(np.round(ref_points[:, 1], 9))
+        bounds_I = (levels_I[:-1] + levels_I[1:]) / 2
+        bounds_Q = (levels_Q[:-1] + levels_Q[1:]) / 2
+        for i, x in enumerate(bounds_I):
+            ax.axvline(x, color="red", linestyle="--", linewidth=1, alpha=0.6,
+                       zorder=1, label="Decision region" if i == 0 else None)
+        for y in bounds_Q:
+            ax.axhline(y, color="red", linestyle="--", linewidth=1, alpha=0.6, zorder=1)
+
+        # Symbol labeling: annotate each reference point with its k-bit word.
+        for (x, y), label in zip(ref_points, ref_labels):
+            ax.annotate(label, (x, y), textcoords="offset points", xytext=(5, 5),
+                        fontsize=7, color="darkgreen", zorder=3)
+
+        if len(bounds_I) or len(bounds_Q):
+            ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0), fontsize=8)
     elif modulation_type == "FSK":
         ax.set_xlabel(r"$\psi_1(t) = \sqrt{\frac{2}{T_b}} ~ \cos(\omega_1 t)$")
         ax.set_ylabel(r"$\psi_2(t) = \sqrt{\frac{2}{T_b}} ~ \cos(\omega_2 t)$")
@@ -86,5 +146,5 @@ def plot_constellation(modulation_type : str, constellation: np.array, M: int, o
     ax.axis('equal')
 
     os.makedirs(output_dir, exist_ok=True)
-    plt.savefig(os.path.join(output_dir, filename), dpi=150)
+    plt.savefig(os.path.join(output_dir, filename), dpi=150, bbox_inches="tight")
     plt.close()
