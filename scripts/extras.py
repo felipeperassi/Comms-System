@@ -62,6 +62,10 @@ def plot_constellation(modulation_type : str, constellation: np.array, output_di
         output_dir: str, the directory where the image will be saved
         filename: str, the name of the image file (default: "constellation.png")
     """
+    supported_modulations = ["QAM", "FSK"]
+    if modulation_type not in supported_modulations:
+        raise ValueError(f"Unsupported modulation type: {modulation_type}. Supported types are: {supported_modulations}")
+    
     plt.figure(figsize=(6, 6))
     ax = plt.gca()
     ax.set_axisbelow(True)         
@@ -72,8 +76,8 @@ def plot_constellation(modulation_type : str, constellation: np.array, output_di
         ax.set_xlabel("In-phase")
         ax.set_ylabel("Quadrature")
     elif modulation_type == "FSK":
-        ax.set_xlabel("$\psi_1(t) = \sqrt{2/T_b} cos(\omega_1 t)$")
-        ax.set_ylabel("$\psi_2(t) = \sqrt{2/T_b} cos(\omega_2 t)$")
+        ax.set_xlabel(r"$\psi_1(t) = \sqrt{\frac{2}{T_b}} ~ \cos(\omega_1 t)$")
+        ax.set_ylabel(r"$\psi_2(t) = \sqrt{\frac{2}{T_b}} ~ \cos(\omega_2 t)$")
     ax.set_title(f"Constellation Diagram - {modulation_type}")
     ax.axis('equal')
 
