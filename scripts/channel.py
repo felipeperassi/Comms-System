@@ -1,31 +1,43 @@
 import numpy as np
 
-def awgn(N, N0):
+def awgn(shape, N_0) -> np.ndarray:
     """
     Generates Additive White Gaussian Noise (AWGN) for a given number of samples and noise power spectral density.
 
     Parameters:
-        N: int, the number of noise samples to generate
-        N0: float, the noise power spectral density
-"""
-    sigma = np.sqrt(N0 / 2)
-    noise_i = np.random.normal(0, sigma, N)
-    noise_q = np.random.normal(0, sigma, N)
-        
-    return np.column_stack([noise_i, noise_q])
+        shape: tuple, the shape of the noise samples to generate (e.g., (N, 2) for QAM or (N, M) for FSK)
+        N_0: float, the noise power spectral density
+    
+    Returns:
+        noise: np.ndarray of size shape, the generated AWGN noise samples
+    """
+    var = np.sqrt(N_0 / 2)
+    mean = 0
 
-def atenuacion():
+    return np.random.normal(mean, var, size=shape)
 
-    #return np.random.uniform(0.5, 0.9)
-    return 1
+def channel_attenuation() -> float:
+    """
+    Simulates channel attenuation by generating a random attenuation factor between 0.5 and 0.9.
+    
+    Returns:
+        float: the attenuation factor
+    """
+    return np.random.uniform(0.5, 0.9)
 
-def channel_effects (symbols, N0):
 
-    noise = awgn(len(symbols), N0)
-
-    atenuados = symbols * atenuacion()
-
-    return atenuados + noise
+def channel_effects (mod_symbols, N_0) -> np.ndarray:
+    """
+    Simulates the effects of the channel on the transmitted symbols by applying attenuation and adding AWGN noise.
+    
+    Parameters:
+        mod_symbols: np.ndarray, the transmitted modulation symbols (shape (N, 2) for QAM or (N, M) for FSK)
+        N_0: float, the noise power spectral density
+    
+    Returns:
+        np.ndarray: the received symbols after channel effects
+    """  
+    return mod_symbols * channel_attenuation() + awgn(mod_symbols.shape, N_0)
 
 
     
