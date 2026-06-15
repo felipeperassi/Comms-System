@@ -62,7 +62,7 @@ def transmitter_pass(text, channel_coding=False, k=None, n=None, G=None, modulat
         G: np.array of shape (k, n), the generator matrix for channel coding (required if channel_coding=True)
         modulation_type: str, the type of modulation to use ("QAM" or "FSK", default: "QAM")
         M: int, the constellation size for modulation (e.g., M=16 for 16-QAM, default: 16)
-        code_label: str, the type of code for constellation labeling ("Gray" or "Binary", default: "Binary")
+        code_label: str, the type of code for constellation labeling ("Binary" or "Binary", default: "Binary")
 
     Returns:
         binary_vector: np.array of shape (N,) containing the binary representation of the codified text before channel coding
@@ -102,7 +102,7 @@ def receiver_pass(channel_symbols, binary_vector_length, code_dict, channel_codi
         G: np.array of shape (k, n), the generator matrix used for channel coding (required if channel_coding=True)
         modulation_type: str, the type of modulation used ("QAM" or "FSK")
         M: int, the constellation size used in modulation (e.g., M=16 for 16-QAM)
-        code_label: str, the type of code used for constellation labeling ("Gray" or "Binary")
+        code_label: str, the type of code used for constellation labeling ("Binary" or "Binary")
 
     Returns:
         decoded_vector: np.array of shape (binary_vector_length,) containing the decoded binary bits after demodulation and channel decoding (if enabled)
@@ -144,8 +144,8 @@ if __name__ == "__main__":
 
     # Vectors for performance evaluation
     EbN0_vec = np.arange(0, 11, 1)  
-    modulation_types = ["QAM"]
-    M_vec = [16]
+    modulation_types = ["FSK"]
+    M_vec = [2, 4, 8, 16]
     channel_coding = True # Set to True to enable channel coding in the performance evaluation loop
 
     # Loop for evaluating performance across different EbN0s, modulation types and constellation sizes
@@ -159,10 +159,10 @@ if __name__ == "__main__":
 
                 # Transmitter pass coded
                 binary_vector, encoded_vector, mod_symbols, mod_symbol_idxs, code_dict = transmitter_pass(text, channel_coding=True, k=k, n=n, G=G, 
-                                                                                               modulation_type=modulation_type, M=M, code_label="Gray")
+                                                                                               modulation_type=modulation_type, M=M, code_label="Binary")
                 
                 # Transmitter pass uncoded 
-                binary_vector_uncoded, _, mod_symbols_uncoded, mod_symbol_idxs_uncoded, _ = transmitter_pass(text, channel_coding=False, modulation_type=modulation_type, M=M, code_label="Gray")
+                binary_vector_uncoded, _, mod_symbols_uncoded, mod_symbol_idxs_uncoded, _ = transmitter_pass(text, channel_coding=False, modulation_type=modulation_type, M=M, code_label="Binary")
 
                 # Channel effects
                 Eb_cod = 1  * (n / k)   # Energy per bit coded
@@ -177,11 +177,11 @@ if __name__ == "__main__":
 
                 # Receiver pass coded
                 decoded_vector, demod_symbol_idxs, decoded_text = receiver_pass(channel_symbols_cod, len(encoded_vector), code_dict, channel_coding=True, k=k, n=n, G=G, 
-                                                                  modulation_type=modulation_type, M=M, code_label="Gray")
+                                                                  modulation_type=modulation_type, M=M, code_label="Binary")
 
                 # Receiver pass uncoded
                 decoded_vector_uncoded, demod_symbol_idxs_uncoded, decoded_text_uncoded = receiver_pass(channel_symbols_uncod, len(binary_vector_uncoded), code_dict, channel_coding=False, k=k, n=n, G=G, 
-                                                                  modulation_type=modulation_type, M=M, code_label="Gray")
+                                                                  modulation_type=modulation_type, M=M, code_label="Binary")
                 # Output decoded text
                 output_filename_coded = f"decoded_{modulation_type}_M{M}_EbN0{EbN0}dB_channel_coded.txt"
                 write_file(OUTPUT_PATH / output_filename_coded, decoded_text) if decoded_text is not None else None
