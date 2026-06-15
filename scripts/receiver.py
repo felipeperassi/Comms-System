@@ -52,7 +52,7 @@ def write_file(filename, decoded_list) -> None:
         decoded_list: list, the list of decoded symbols to be written to the file
     """
     content = ''.join(decoded_list)
-    with open(filename, 'w') as f:
+    with open(filename, 'w',encoding='utf-8') as f:
         f.write(content)
 
 # ----------------------------------- TP2 -----------------------------------
@@ -176,7 +176,7 @@ def parity(G, k, n) -> np.array:
         np.array: the parity-check matrix H of size (n-k, n)
     """
     P = G[:, :n-k]  # G = [P | I(k)] 
-    H = np.hstack((P.T, np.eye(n-k, dtype=int))) # H = [P^T | I(n-k)]
+    H = np.hstack((np.eye(n-k, dtype=int), P.T))  # H = [I | P^T]
     return H
 
 def syndrome(U, H) -> np.array:

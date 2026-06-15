@@ -50,7 +50,7 @@ def source_coding(text : str) -> None:
           f"Decoded sentence: {''.join(decoded_sentence)}", sep="\n")
 
 if __name__ == "__main__":
-    with open(TXT_PATH, 'r') as f:
+    with open(TXT_PATH, 'r',encoding='utf-8') as f:
         text = f.read()
     
     source_coding(text)
