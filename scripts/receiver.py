@@ -19,6 +19,30 @@ def decode_text(codified_codes, code_dict) -> list:
     reverse_code_dict = {code: symbol for symbol, code in code_dict.items()} # reverse mapping from code to symbol
     return [reverse_code_dict[code] for code in codified_codes]
 
+def huffman_decode(binary_vector, code_dict) -> list:
+    """
+    Decodes a continuous bit vector into symbols using a Huffman code dictionary,
+    exploiting the prefix-free property to find the codeword boundaries.
+
+    Parameters:
+        binary_vector: np.array, the continuous stream of bits (0/1)
+        code_dict: dict {symbol: codeword string}
+
+    Returns:
+        list: the decoded symbols
+    """
+    reverse_code_dict = {code: symbol for symbol, code in code_dict.items()}
+
+    decoded = []
+    current = ""
+    for bit in binary_vector:
+        current += str(int(bit))
+        if current in reverse_code_dict:
+            decoded.append(reverse_code_dict[current])
+            current = ""
+
+    return decoded
+
 def write_file(filename, decoded_list) -> None:
     """
     Writes a list of decoded symbols to a file.

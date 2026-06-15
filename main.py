@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.special import erfc
-from data.config import TXT_PATH, OUTPUT_PATH, MEDIA_PATH
+from data.config import TXT_PATH, OUTPUT_PATH
 from scripts.transmitter import appearence_probs, huffman_algorithm, codificate_text, modulate_symbols, codificate_channel
-from scripts.receiver import decodificate_channel, syndrome_table, parity, demodulate_symbols, symbol_error_probability, bit_error_probability
+from scripts.receiver import huffman_decode, write_file, decodificate_channel, syndrome_table, parity, demodulate_symbols, symbol_error_probability, bit_error_probability
 from scripts.extras import plot_error_curve
 from scripts.channel import channel_effects, awgn
 
@@ -87,9 +87,9 @@ def transmitter_pass(text, channel_coding=False, k=None, n=None, G=None, modulat
     # Modulation
     mod_symbols, mod_symbol_idxs = modulate_symbols(encoded_vector, modulation_type=modulation_type, M=M, code_label=code_label)
 
-    return binary_vector, encoded_vector, mod_symbols, mod_symbol_idxs
+    return binary_vector, encoded_vector, mod_symbols, mod_symbol_idxs, code_dict
 
-def receiver_pass(channel_symbols, binary_vector_length, channel_coding=False, k=None, n=None, G=None, modulation_type="QAM", M=16, code_label="Binary"):
+def receiver_pass(channel_symbols, binary_vector_length, code_dict, channel_coding=False, k=None, n=None, G=None, modulation_type="QAM", M=16, code_label="Binary"):
     """
     Performs the receiver operations: demodulation, channel decoding (if enabled) and returns the decoded binary vector and the demodulated symbol indices for error evaluation.
     
@@ -122,8 +122,11 @@ def receiver_pass(channel_symbols, binary_vector_length, channel_coding=False, k
         decoded_vector = decodificate_channel(demod_symbols, H, S, k, n)
     else: 
         decoded_vector = demod_symbols
+    
+    # Source decoding
+    decoded_text = huffman_decode(decoded_vector, code_dict) if code_dict is not None else None
         
-    return decoded_vector, demod_symbol_idxs
+    return decoded_vector, demod_symbol_idxs, decoded_text
 
 if __name__ == "__main__":
     with open(TXT_PATH, 'r') as f:
@@ -154,7 +157,7 @@ if __name__ == "__main__":
                 print(f"----- Evaluating {modulation_type} with M={M} at EbN0={EbN0} dB -----")
 
                 # Transmitter pass
-                binary_vector, encoded_vector, mod_symbols, mod_symbol_idxs = transmitter_pass(text, channel_coding=channel_coding, k=k, n=n, G=G, 
+                binary_vector, encoded_vector, mod_symbols, mod_symbol_idxs, code_dict = transmitter_pass(text, channel_coding=channel_coding, k=k, n=n, G=G, 
                                                                                                modulation_type=modulation_type, M=M, code_label="Binary")
 
                 # Channel effects
@@ -166,12 +169,16 @@ if __name__ == "__main__":
                 # channel_symbols = channel_effects(mod_symbols, N_0) # Uncomment to include attenuation effects in the channel.
 
                 # Receiver pass
-                decoded_vector, demod_symbol_idxs = receiver_pass(channel_symbols, len(encoded_vector), channel_coding=channel_coding, k=k, n=n, G=G, 
+                decoded_vector, demod_symbol_idxs, decoded_text = receiver_pass(channel_symbols, len(encoded_vector), code_dict, channel_coding=channel_coding, k=k, n=n, G=G, 
                                                                   modulation_type=modulation_type, M=M, code_label="Binary")
+
+                # Output decoded text
+                output_filename = f"decoded_{modulation_type}_M{M}_EbN0{EbN0}dB_channel_{'coded' if channel_coding else 'uncoded'}.txt"             
+                write_file(OUTPUT_PATH / output_filename, decoded_text) if decoded_text is not None else None
 
                 # Error evaluation
                 sym_error_sim = symbol_error_probability(mod_symbol_idxs, demod_symbol_idxs)
-                bit_error_sim = bit_error_probability(binary_vector, decoded_vector)
+                bit_error_sim = bit_error_probability(binary_vector, decoded_vector[:len(binary_vector)])
                 sim_Pe.append(sym_error_sim), sim_Pb.append(bit_error_sim)
                 print(f"SNR: {EbN0} dB - Pe: {sym_error_sim:.4f}, Pb: {bit_error_sim:.4f}")
                 
