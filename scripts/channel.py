@@ -38,4 +38,4 @@ def channel_effects(mod_symbols, N_0) -> np.ndarray:
     Returns:
         np.ndarray: the received symbols after channel effects
     """  
-    return mod_symbols * channel_attenuation() + awgn(mod_symbols.shape, N_0)
+    return mod_symbols + awgn(mod_symbols.shape, N_0)

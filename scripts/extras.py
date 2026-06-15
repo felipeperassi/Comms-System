@@ -150,14 +150,15 @@ draws the minimum-distance decision regions and the bit labels of each symbol.
     plt.savefig(os.path.join(output_dir, filename), dpi=150, bbox_inches="tight")
     plt.close()
 
-def plot_error_curve(EbN0_vec, theo_error, sim_error, title="", y_label=r"$P$", filename="error.png") -> None:
+def plot_error_curve(EbN0_vec, theo_error, sim_error_cod, sim_error_uncod, title="", y_label=r"$P$", filename="error.png") -> None:
     """
     Plots theoretical and simulated error probability series as a function of Eb/N0
 
     Parameters:
         EbN0_vec: array-like, the Eb/N0 values in dB (x axis)
         theo_error: array-like, the theoretical error probabilities
-        sim_error: array-like, the simulated error probabilities
+        sim_error_cod: array-like, the simulated error probabilities for the coded case
+        sim_error_uncod: array-like, the simulated error probabilities for the uncoded case
         title: str, the plot title
         y_label: str, the y axis label (e.g. r"$P_e$" or r"$P_b$")
         filename: str, the output image file name
@@ -165,8 +166,9 @@ def plot_error_curve(EbN0_vec, theo_error, sim_error, title="", y_label=r"$P$", 
     fig, ax = plt.subplots(figsize=(8, 6))
 
     ax.semilogy(EbN0_vec, theo_error, "-", label="Theoretical")
-    ax.semilogy(EbN0_vec, sim_error, "x-", label="Simulated")
-
+    ax.semilogy(EbN0_vec, sim_error_uncod, "x--", label="Simulated (Uncoded)")
+    ax.semilogy(EbN0_vec, sim_error_cod, "x--", label="Simulated (Coded)")
+    
     ax.set(xlabel=r"$E_b/N_0$ [dB]", ylabel=y_label, title=title)
     ax.grid(True, which="both", alpha=0.3)
     ax.legend()

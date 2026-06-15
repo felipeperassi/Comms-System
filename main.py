@@ -144,50 +144,69 @@ if __name__ == "__main__":
 
     # Vectors for performance evaluation
     EbN0_vec = np.arange(0, 11, 1)  
-    modulation_types = ["QAM", "FSK"]
-    M_vec = [2, 4, 8, 16]
+    modulation_types = ["QAM"]
+    M_vec = [16]
     channel_coding = True # Set to True to enable channel coding in the performance evaluation loop
 
     # Loop for evaluating performance across different EbN0s, modulation types and constellation sizes
     for modulation_type in modulation_types:
         for M in M_vec:
 
-            sim_Pe, sim_Pb, theo_Pe, theo_Pb = [], [], [], []
+            sim_Pe_cod, sim_Pb_cod, theo_Pe_cod, theo_Pb_cod = [], [], [], []
+            sim_Pe_uncod, sim_Pb_uncod, theo_Pe_uncod, theo_Pb_uncod = [], [], [], []
             for EbN0 in EbN0_vec:
                 print(f"----- Evaluating {modulation_type} with M={M} at EbN0={EbN0} dB -----")
 
-                # Transmitter pass
-                binary_vector, encoded_vector, mod_symbols, mod_symbol_idxs, code_dict = transmitter_pass(text, channel_coding=channel_coding, k=k, n=n, G=G, 
-                                                                                               modulation_type=modulation_type, M=M, code_label="Binary")
+                # Transmitter pass coded
+                binary_vector, encoded_vector, mod_symbols, mod_symbol_idxs, code_dict = transmitter_pass(text, channel_coding=True, k=k, n=n, G=G, 
+                                                                                               modulation_type=modulation_type, M=M, code_label="Gray")
+                
+                # Transmitter pass uncoded 
+                binary_vector_uncoded, _, mod_symbols_uncoded, mod_symbol_idxs_uncoded, _ = transmitter_pass(text, channel_coding=False, modulation_type=modulation_type, M=M, code_label="Gray")
 
                 # Channel effects
-                Eb = 1  # Energy per bit
+                Eb_cod = 1  # Energy per bit coded
+                Eb_uncod = 1 * (k / n)  # Energy per bit uncoded (same as coded for fair comparison)
                 EbN0_linear = 10 ** (EbN0 / 10)  # Convert dB to linear scale
-                N_0 = Eb / EbN0_linear
-
-                channel_symbols = mod_symbols + awgn(mod_symbols.shape, N_0)
+                N_0_uncod = Eb_uncod / EbN0_linear
+                N_0_cod = Eb_cod / EbN0_linear
+               
+                channel_symbols_cod = mod_symbols + awgn(mod_symbols.shape, N_0_cod)
+                channel_symbols_uncod = mod_symbols_uncoded + awgn(mod_symbols_uncoded.shape, N_0_uncod)
                 # channel_symbols = channel_effects(mod_symbols, N_0) # Uncomment to include attenuation effects in the channel.
 
-                # Receiver pass
-                decoded_vector, demod_symbol_idxs, decoded_text = receiver_pass(channel_symbols, len(encoded_vector), code_dict, channel_coding=channel_coding, k=k, n=n, G=G, 
-                                                                  modulation_type=modulation_type, M=M, code_label="Binary")
+                # Receiver pass coded
+                decoded_vector, demod_symbol_idxs, decoded_text = receiver_pass(channel_symbols_cod, len(encoded_vector), code_dict, channel_coding=True, k=k, n=n, G=G, 
+                                                                  modulation_type=modulation_type, M=M, code_label="Gray")
 
+                # Receiver pass uncoded
+                decoded_vector_uncoded, demod_symbol_idxs_uncoded, decoded_text_uncoded = receiver_pass(channel_symbols_uncod, len(binary_vector_uncoded), code_dict, channel_coding=False, k=k, n=n, G=G, 
+                                                                  modulation_type=modulation_type, M=M, code_label="Gray")
                 # Output decoded text
-                output_filename = f"decoded_{modulation_type}_M{M}_EbN0{EbN0}dB_channel_{'coded' if channel_coding else 'uncoded'}.txt"             
-                write_file(OUTPUT_PATH / output_filename, decoded_text) if decoded_text is not None else None
+                output_filename_coded = f"decoded_{modulation_type}_M{M}_EbN0{EbN0}dB_channel_coded.txt"
+                write_file(OUTPUT_PATH / output_filename_coded, decoded_text) if decoded_text is not None else None
+
+                output_filename_uncoded = f"decoded_{modulation_type}_M{M}_EbN0{EbN0}dB_channel_uncoded.txt"
+                write_file(OUTPUT_PATH / output_filename_uncoded, decoded_text_uncoded) if decoded_text_uncoded is not None else None
 
                 # Error evaluation
-                sym_error_sim = symbol_error_probability(mod_symbol_idxs, demod_symbol_idxs)
-                bit_error_sim = bit_error_probability(binary_vector, decoded_vector[:len(binary_vector)])
-                sim_Pe.append(sym_error_sim), sim_Pb.append(bit_error_sim)
-                print(f"SNR: {EbN0} dB - Pe: {sym_error_sim:.4f}, Pb: {bit_error_sim:.4f}")
+                sym_error_cod = symbol_error_probability(mod_symbol_idxs, demod_symbol_idxs)
+                bit_error_cod = bit_error_probability(binary_vector, decoded_vector[:len(binary_vector)])
+                sym_error_uncod = symbol_error_probability(mod_symbol_idxs_uncoded, demod_symbol_idxs_uncoded)
+                bit_error_uncod = bit_error_probability(binary_vector_uncoded, decoded_vector_uncoded[:len(binary_vector_uncoded)])
                 
+                sim_Pe_cod.append(sym_error_cod), sim_Pb_cod.append(bit_error_cod)
+                sim_Pe_uncod.append(sym_error_uncod), sim_Pb_uncod.append(bit_error_uncod)
+
+                print(f"SNR: {EbN0} dB - Pe: {sym_error_cod:.4f}, Pb: {bit_error_cod:.4f}")
+                print(f"SNR: {EbN0} dB - Pe (uncoded): {sym_error_uncod:.4f}, Pb (uncoded): {bit_error_uncod:.4f}")
+
                 # Theoretical error probabilities
                 sym_error_theo, bit_error_theo = theo_error_probabilities(modulation_type, M, EbN0)
-                theo_Pe.append(sym_error_theo), theo_Pb.append(bit_error_theo)
+                theo_Pe_cod.append(sym_error_theo), theo_Pb_cod.append(bit_error_theo)
                 print(f"SNR: {EbN0} dB - Theoretical Pe: {sym_error_theo:.4f}, Theoretical Pb: {bit_error_theo:.4f}")
             
-            plot_error_curve(EbN0_vec, theo_Pb, sim_Pb, title=f"Bit Error Probability - {modulation_type} - M={M}", 
-                             y_label=r"$P_b$", filename=f"bep_{modulation_type}_{M}_channel_{channel_coding}.png")
-            plot_error_curve(EbN0_vec, theo_Pe, sim_Pe, title=f"Symbol Error Probability - {modulation_type} - M={M}", 
-                             y_label=r"$P_e$", filename=f"sep_{modulation_type}_{M}_channel_{channel_coding}.png")
+            plot_error_curve(EbN0_vec, theo_error=theo_Pb_cod, sim_error_cod=sim_Pb_cod, sim_error_uncod=sim_Pb_uncod, title=f"Bit Error Probability - {modulation_type} - M={M}", 
+                             y_label=r"$P_b$", filename=f"bep_{modulation_type}_{M}_channel_comp.png")
+            plot_error_curve(EbN0_vec, theo_error=theo_Pe_cod, sim_error_cod=sim_Pe_cod, sim_error_uncod=sim_Pe_uncod, title=f"Symbol Error Probability - {modulation_type} - M={M}", 
+                             y_label=r"$P_e$", filename=f"sep_{modulation_type}_{M}_channel_comp.png")
