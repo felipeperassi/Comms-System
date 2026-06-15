@@ -6,3 +6,6 @@
 # Python cache folders
 __pycache__/
 *.py[cod]
+
+# txt Outputs
+data/output/

@@ -165,8 +165,8 @@ if __name__ == "__main__":
                 binary_vector_uncoded, _, mod_symbols_uncoded, mod_symbol_idxs_uncoded, _ = transmitter_pass(text, channel_coding=False, modulation_type=modulation_type, M=M, code_label="Gray")
 
                 # Channel effects
-                Eb_cod = 1  # Energy per bit coded
-                Eb_uncod = 1 * (k / n)  # Energy per bit uncoded (same as coded for fair comparison)
+                Eb_cod = 1  * (n / k)   # Energy per bit coded
+                Eb_uncod = 1            # Energy per bit uncoded (same as coded for fair comparison)
                 EbN0_linear = 10 ** (EbN0 / 10)  # Convert dB to linear scale
                 N_0_uncod = Eb_uncod / EbN0_linear
                 N_0_cod = Eb_cod / EbN0_linear
