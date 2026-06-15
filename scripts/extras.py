@@ -174,3 +174,106 @@ def plot_error_curve(EbN0_vec, theo_error, sim_error, title="", y_label=r"$P$", 
     os.makedirs(MEDIA_PATH / "error_curves", exist_ok=True)
     fig.savefig(MEDIA_PATH / "error_curves" / filename, dpi=150)
     plt.close(fig)
+
+def plot_error_curves(EbN0_dB, series, filename, suptitle="") -> None:
+    """
+    Plots a single figure with two subplots, Pe (left) and Pb (right), as a
+    function of Eb/N0. Each entry in ``series`` produces one simulated curve
+    (markers) and, optionally, one theoretical curve (solid line) in the same
+    color on both subplots.
+
+    Parameters:
+        EbN0_dB: array-like, the Eb/N0 values in dB (shared x axis)
+        series: list of dicts, each with keys:
+            "label": str, the curve label (e.g. "M=2")
+            "pe_sim", "pb_sim": array-like, simulated symbol/bit error probs
+            "pe_theo", "pb_theo": array-like or None, theoretical symbol/bit probs
+        filename: str, the output image file name
+        suptitle: str, the overall figure title
+    """
+    fig, (ax_pe, ax_pb) = plt.subplots(1, 2, figsize=(13, 5))
+    colors = plt.cm.tab10(np.linspace(0, 1, 10))
+
+    for i, s in enumerate(series):
+        c = colors[i % 10]
+        label = s["label"]
+
+        if s.get("pe_theo") is not None:
+            ax_pe.semilogy(EbN0_dB, s["pe_theo"], "-", color=c, label=f"{label} (teórica)")
+        ax_pe.semilogy(EbN0_dB, s["pe_sim"], "x", color=c, label=f"{label} (simulada)")
+
+        if s.get("pb_theo") is not None:
+            ax_pb.semilogy(EbN0_dB, s["pb_theo"], "-", color=c, label=f"{label} (teórica)")
+        ax_pb.semilogy(EbN0_dB, s["pb_sim"], "x", color=c, label=f"{label} (simulada)")
+
+    ax_pe.set(xlabel=r"$E_b/N_0$ [dB]", ylabel=r"$P_e$", title="Probabilidad de error de símbolo")
+    ax_pb.set(xlabel=r"$E_b/N_0$ [dB]", ylabel=r"$P_b$", title="Probabilidad de error de bit")
+    for ax in (ax_pe, ax_pb):
+        ax.grid(True, which="both", alpha=0.3)
+        ax.legend(fontsize=8)
+    if suptitle:
+        fig.suptitle(suptitle)
+
+    fig.tight_layout()
+    os.makedirs(MEDIA_PATH / "error_curves", exist_ok=True)
+    fig.savefig(MEDIA_PATH / "error_curves" / filename, dpi=150)
+    plt.close(fig)
+
+def plot_modulation_comparison(EbN0_dB, panels, filename, suptitle="") -> None:
+    """
+    Plots one subplot per M value, each comparing the theoretical bit error
+    probability of several modulations as a function of Eb/N0.
+
+    Parameters:
+        EbN0_dB: array-like, the Eb/N0 values in dB (shared x axis)
+        panels: list of (M, curves) tuples, where curves is a dict
+                {modulation_name: Pb_array} for that M
+        filename: str, the output image file name
+        suptitle: str, the overall figure title
+    """
+    ncols = 2
+    nrows = int(np.ceil(len(panels) / ncols))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(13, 5 * nrows), squeeze=False)
+
+    for ax, (M, curves) in zip(axes.flat, panels):
+        for name, pb in curves.items():
+            ax.semilogy(EbN0_dB, pb, label=name)
+        ax.set(xlabel=r"$E_b/N_0$ [dB]", ylabel=r"$P_b$", title=f"M = {M}")
+        ax.set_ylim(1e-6, 1)
+        ax.grid(True, which="both", alpha=0.3)
+        ax.legend(fontsize=8)
+
+    for ax in axes.flat[len(panels):]:
+        ax.axis("off")
+    if suptitle:
+        fig.suptitle(suptitle)
+
+    fig.tight_layout()
+    os.makedirs(MEDIA_PATH / "error_curves", exist_ok=True)
+    fig.savefig(MEDIA_PATH / "error_curves" / filename, dpi=150)
+    plt.close(fig)
+
+def plot_simulated_comparison(EbN0_dB, curves, y_label, title, filename) -> None:
+    """
+    Plots several simulated error-probability series on a single semilog axis,
+    e.g. to compare the uncoded and channel-coded cases.
+
+    Parameters:
+        EbN0_dB: array-like, the Eb/N0 values in dB (x axis)
+        curves: list of dicts, each with keys "label" and "values"
+        y_label: str, the y axis label (e.g. r"$P_e$" or r"$P_b$")
+        title: str, the plot title
+        filename: str, the output image file name
+    """
+    fig, ax = plt.subplots(figsize=(8, 6))
+    for curve in curves:
+        ax.semilogy(EbN0_dB, curve["values"], "x-", label=curve["label"])
+
+    ax.set(xlabel=r"$E_b/N_0$ [dB]", ylabel=y_label, title=title)
+    ax.grid(True, which="both", alpha=0.3)
+    ax.legend()
+
+    fig.tight_layout()
+    os.makedirs(MEDIA_PATH / "error_curves", exist_ok=True)
+    fig.savefig(MEDIA_PATH / "error_curves" / filename, dpi=150)
+    plt.close(fig)

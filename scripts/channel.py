@@ -27,15 +27,18 @@ def channel_attenuation() -> float:
     """
     return np.random.uniform(0.5, 0.9)
 
-def channel_effects(mod_symbols, N_0) -> np.ndarray:
+def channel_effects(mod_symbols, N_0, attenuation=True) -> np.ndarray:
     """
     Simulates the effects of the channel on the transmitted symbols by applying attenuation and adding AWGN noise.
-    
+
     Parameters:
         mod_symbols: np.ndarray, the transmitted modulation symbols (shape (N, 2) for QAM or (N, M) for FSK)
         N_0: float, the noise power spectral density
-    
+        attenuation: bool, if True applies a random channel attenuation (section D);
+                     set to False for a pure AWGN channel (error-probability curves)
+
     Returns:
         np.ndarray: the received symbols after channel effects
-    """  
-    return mod_symbols * channel_attenuation() + awgn(mod_symbols.shape, N_0)
+    """
+    a = channel_attenuation() if attenuation else 1.0
+    return mod_symbols * a + awgn(mod_symbols.shape, N_0)
