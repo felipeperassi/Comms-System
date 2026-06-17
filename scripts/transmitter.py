@@ -280,7 +280,6 @@ def encode_block(message, G) -> np.array:
     Returns:
         np.array: the encoded codeword of n bits (shape (n,))
     """
-    #Codifica un mensaje de k bits en una palabra código de n bits.
 
     return np.mod(message @ G, 2)
 
