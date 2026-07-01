@@ -90,7 +90,7 @@ def qam_reference(M: int, code_label: str) -> tuple:
 def plot_constellation(modulation_type : str, constellation: np.array, M: int, output_dir: str, code_label: str = "Binary", filename: str = "constellation.png") -> None:
     """
     Plots the constellation points and saves it as an image file. For QAM it also
-draws the minimum-distance decision regions and the bit labels of each symbol.
+    draws the minimum-distance decision regions and the bit labels of each symbol.
 
     Parameters:
         modulation_type: str, the type of modulation

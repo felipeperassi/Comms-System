@@ -72,5 +72,5 @@ if __name__ == "__main__":
     binary_vector = np.array([int(bit) for symbol in codified_text for bit in symbol]) # [1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, ... ]
 
     # Test channel effects for both modulation types
-    channel(binary_vector, modulation_type="QAM", M=16, code_label="Binary")
+    channel(binary_vector, modulation_type="QAM", M=16, code_label="Gray")
     channel(binary_vector, modulation_type="FSK", M=2, code_label="Binary")    
