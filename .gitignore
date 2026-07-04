@@ -9,3 +9,8 @@ __pycache__/
 
 # txt Outputs
 data/output/
+
+# Local large datasets / scratch
+data/the_bible.txt
+data/the_bible_long.txt
+tmp/
