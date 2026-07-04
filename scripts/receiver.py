@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 from scripts.transmitter import amplitude_label
@@ -52,6 +54,7 @@ def write_file(filename, decoded_list) -> None:
         decoded_list: list, the list of decoded symbols to be written to the file
     """
     content = ''.join(decoded_list)
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'w',encoding='utf-8') as f:
         f.write(content)
 
@@ -193,24 +196,46 @@ def syndrome(U, H) -> np.array:
 
 def syndrome_table(H, n) -> dict:
     """
-    Constructs a syndrome table for single-bit error patterns based on the parity-check matrix H.
-    
+    Constructs the complete syndrome table (one coset leader per syndrome) for the
+    (n, k) code defined by the parity-check matrix H.
+
+    The table covers all 2^(n-k) syndromes:
+        - the all-zero error pattern (syndrome 0),
+        - every single-bit (weight-1) error pattern,
+        - and, for the syndromes not reachable by a weight-0 or weight-1 pattern,
+          a weight-2 coset leader of the form e_0 + e_j.
+
     Parameters:
         H: np.array, the parity-check matrix of size (n-k, n)
         n: int, the total number of bits in the codeword (message + parity)
-    
+
     Returns:
-        dict: a dictionary mapping syndromes to their corresponding single-bit error patterns
+        dict: a dictionary mapping each syndrome (tuple) to its coset leader
     """
     table = {}
-    for i in range(n):
-        error = np.zeros(n, dtype=int)  # Error pattern
-        error[i] = 1                    # Error in bit i
 
+    def add(error):
         s = syndrome(error, H)  # Syndrome for this error pattern
-        table[s] = error
+        if s not in table:      # Keep the first (lowest-weight) leader per syndrome
+            table[s] = error
 
-    return table 
+    # Weight-0 coset leader (no error)
+    add(np.zeros(n, dtype=int))
+
+    # Weight-1 coset leaders (single-bit error in each position)
+    for i in range(n):
+        error = np.zeros(n, dtype=int)
+        error[i] = 1
+        add(error)
+
+    # Weight-2 coset leaders (e_0 + e_j) for the remaining syndromes
+    for j in range(1, n):
+        error = np.zeros(n, dtype=int)
+        error[0] = 1
+        error[j] = 1
+        add(error)
+
+    return table
 
 def decode_block(U, H, S, k) -> np.array:
     """
@@ -276,3 +301,35 @@ def code_parameters(G, k, n) -> tuple:
     t = (dmin - 1) // 2     # Correctable errors
 
     return dmin, e, t
+
+
+if __name__ == "__main__":
+    # Genera los diagramas de constelacion QAM recibidos (con ruido AWGN y
+    # regiones de decision) para M = 2, 4, 8, 16, reutilizando el mismo flujo.
+    from data.config import TXT_PATH, MEDIA_PATH
+    from scripts.transmitter import (appearence_probs, huffman_algorithm,
+                                     codificate_text, modulate_symbols)
+    from scripts.channel import channel_effects
+    from scripts.extras import plot_constellation
+
+    M_VEC = [2, 4, 8, 16]        # niveles QAM a graficar
+    CODE_LABEL = "Binary"        # mapeo de bits ("Binary" o "Gray")
+    EbN0_dB = 15                 # Eb/N0 para la nube de ruido
+    OUT_DIR = MEDIA_PATH / "constellations"
+
+    with open(TXT_PATH, 'r') as f:
+        text = f.read()
+
+    # Codificacion de fuente (mismo flujo que el modem)
+    probs_dict, _ = appearence_probs(text)
+    code_dict = huffman_algorithm(probs_dict)
+    codified_text = codificate_text(text, code_dict)
+    binary_vector = np.array([int(bit) for symbol in codified_text for bit in symbol])
+
+    N_0 = 1.0 / 10 ** (EbN0_dB / 10)   # Eb = 1  ->  N0 = 1 / (Eb/N0)
+    for M in M_VEC:
+        mod_symbols, _ = modulate_symbols(binary_vector, "QAM", M, CODE_LABEL)
+        received = channel_effects(mod_symbols, N_0, attenuation=False)
+        plot_constellation("QAM", received, M, OUT_DIR,
+                           code_label=CODE_LABEL, filename=f"qam_M{M}_received.png")
+        print(f"QAM M={M}: constelacion recibida ({EbN0_dB} dB) -> {OUT_DIR / f'qam_M{M}_received.png'}")

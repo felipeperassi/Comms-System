@@ -304,3 +304,57 @@ def codificate_channel(binary_vector, G, k, n) -> np.array:
     blocks = binary_vector.reshape(-1, k) # k bits blocks (N x k)
     encoded_blocks = np.array([encode_block(block, G) for block in blocks]) # Encode each block (N x n)
     return encoded_blocks.flatten()
+
+
+if __name__ == "__main__":
+    # Genera los diagramas de constelacion QAM transmitidos (sin ruido) para
+    # M = 2, 4, 8, 16, reutilizando el mismo flujo de codificacion y modulacion.
+    from data.config import TXT_PATH, MEDIA_PATH
+    from scripts.extras import plot_constellation
+
+    M_VEC = [2, 4, 8, 16]        # niveles QAM a graficar
+    CODE_LABEL = "Binary"        # mapeo de bits ("Binary" o "Gray")
+    OUT_DIR = MEDIA_PATH / "constellations"
+
+    with open(TXT_PATH, 'r') as f:
+        text = f.read()
+
+    # Codificacion de fuente (mismo flujo que el modem)
+    probs_dict, _ = appearence_probs(text)
+    code_dict = huffman_algorithm(probs_dict)
+    codified_text = codificate_text(text, code_dict)
+    binary_vector = np.array([int(bit) for symbol in codified_text for bit in symbol])
+
+    energy_rows = []   # (M, k, Es_teo, Es_hat, Eb_teo, Eb_hat)
+    for M in M_VEC:
+        mod_symbols, _ = modulate_symbols(binary_vector, "QAM", M, CODE_LABEL)
+        plot_constellation("QAM", mod_symbols, M, OUT_DIR,
+                           code_label=CODE_LABEL, filename=f"qam_M{M}_transmitted.png")
+        print(f"QAM M={M}: constelacion transmitida -> {OUT_DIR / f'qam_M{M}_transmitted.png'}")
+
+        # Energias: teoricas (Eb=1 -> Es=k) vs estimadas sobre los simbolos enviados
+        k = int(np.log2(M))
+        Eb_teo, Es_teo = 1.0, float(k)
+        Es_hat, Eb_hat = calculate_mean_energies(mod_symbols, M)
+        energy_rows.append((M, k, Es_teo, Es_hat, Eb_teo, Eb_hat))
+
+    # Energias FSK (M = 2, 4, 8, 16). No se grafican: para M > 2 la constelacion
+    # ortogonal vive en M dimensiones y no es representable en el plano.
+    fsk_rows = []
+    for M in M_VEC:
+        mod_symbols, _ = modulate_symbols(binary_vector, "FSK", M, "Binary")
+        k = int(np.log2(M))
+        Eb_teo, Es_teo = 1.0, float(k)
+        Es_hat, Eb_hat = calculate_mean_energies(mod_symbols, M)
+        fsk_rows.append((M, k, Es_teo, Es_hat, Eb_teo, Eb_hat))
+
+    def print_energy_table(title, rows):
+        print(f"\nEnergia media por simbolo y por bit (teorica vs estimada) - {title}")
+        print(f"{'M':>3} {'k':>3} {'Es_teo':>8} {'Es_hat':>8} {'Eb_teo':>8} {'Eb_hat':>8}")
+        print("-" * 42)
+        for M, k, Es_teo, Es_hat, Eb_teo, Eb_hat in rows:
+            print(f"{M:>3} {k:>3} {Es_teo:>8.4f} {Es_hat:>8.4f} {Eb_teo:>8.4f} {Eb_hat:>8.4f}")
+
+    # Tablas comparativas de energias medias por simbolo y por bit
+    print_energy_table("QAM", energy_rows)
+    print_energy_table("FSK", fsk_rows)

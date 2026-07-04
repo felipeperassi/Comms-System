@@ -133,17 +133,21 @@ def plot_constellation(modulation_type : str, constellation: np.array, M: int, o
         for y in bounds_Q:
             ax.axhline(y, color="red", linestyle="--", linewidth=1, alpha=0.6, zorder=1)
 
-        # Symbol labeling: annotate each reference point with its k-bit word.
+        # Symbol labeling: annotate each reference point with its k-bit word,
+        # boxed and offset above the point so the constellation marker stays visible.
         for (x, y), label in zip(ref_points, ref_labels):
-            ax.annotate(label, (x, y), textcoords="offset points", xytext=(5, 5),
-                        fontsize=7, color="darkgreen", zorder=3)
+            ax.annotate(label, (x, y), textcoords="offset points", xytext=(0, 12),
+                        ha="center", va="center",
+                        fontsize=8, color="darkgreen", fontweight="bold", zorder=3,
+                        bbox=dict(boxstyle="round,pad=0.25", facecolor="white",
+                                  edgecolor="darkgreen", linewidth=1.2))
 
         if len(bounds_I) or len(bounds_Q):
-            ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0), fontsize=8)
+            ax.legend(loc="upper left", bbox_to_anchor=(0.0, -0.08), fontsize=8)
     elif modulation_type == "FSK":
         ax.set_xlabel(r"$\psi_1(t) = \sqrt{\frac{2}{T_b}} ~ \cos(\omega_1 t)$")
         ax.set_ylabel(r"$\psi_2(t) = \sqrt{\frac{2}{T_b}} ~ \cos(\omega_2 t)$")
-    ax.set_title(f"Constellation Diagram - {modulation_type}")
+    ax.set_title(f"Constellation Diagram - {modulation_type} (M={M})")
     ax.axis('equal')
 
     os.makedirs(output_dir, exist_ok=True)
