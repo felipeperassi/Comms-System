@@ -1,10 +1,20 @@
 import numpy as np
 from scipy.special import erfc
-from data.config import TXT_PATH, OUTPUT_PATH
+from data.config import MAX_TEXT_CHARS, TXT_PATH, OUTPUT_PATH
 from scripts.transmitter import appearence_probs, huffman_algorithm, codificate_text, modulate_symbols, codificate_channel
 from scripts.receiver import huffman_decode, write_file, decodificate_channel, syndrome_table, parity, demodulate_symbols, symbol_error_probability, bit_error_probability
 from scripts.extras import plot_error_curve
 from scripts.channel import channel_effects, awgn
+
+def read_simulation_text(path, max_chars=None):
+    """
+    Reads a bounded UTF-8 text sample for the simulation.
+
+    The transmitter builds several full-size arrays from this text, so using a
+    huge input file directly can require many times the file size in RAM.
+    """
+    with open(path, 'r', encoding='utf-8') as f:
+        return f.read() if max_chars is None else f.read(max_chars)
 
 def q_function(x) -> np.ndarray:
     """
@@ -35,12 +45,23 @@ def theo_error_probabilities(modulation_type, M, EbN0_dB) -> tuple:
     k = np.log2(M)
 
     if modulation_type == "QAM":
-        if M == 2:                                   
-            Pe = q_function(np.sqrt(2 * EbN0))
-            return Pe, Pe
+        # if M == 2:                                   
+        #     Pe = q_function(np.sqrt(2 * EbN0))
+        #     return Pe, Pe
         
-        p = 2 * (1 - 1 / np.sqrt(M)) * q_function(np.sqrt(3 * k / (M - 1) * EbN0))
-        Pe = 1 - (1 - p) ** 2
+        # p = 2 * (1 - 1 / np.sqrt(M)) * q_function(np.sqrt(3 * k / (M - 1) * EbN0))
+        # Pe = 1 - (1 - p) ** 2
+        kI, kQ = int(np.ceil(k / 2)), int(np.floor(k / 2))
+        MI, MQ = 2 ** kI, 2 ** kQ
+
+        Es_grid = ((MI ** 2 - 1) + (MQ ** 2 - 1)) / 3
+        q_arg = np.sqrt(2 * k * EbN0 / Es_grid)
+        q = q_function(q_arg)
+
+        Pc_I = 1 - 2 * (1 - 1 / MI) * q
+        Pc_Q = 1 - 2 * (1 - 1 / MQ) * q if MQ > 1 else 1
+
+        Pe = 1 - Pc_I * Pc_Q
         return Pe, Pe / k                         
 
     if modulation_type == "FSK":
@@ -129,8 +150,10 @@ def receiver_pass(channel_symbols, binary_vector_length, code_dict, channel_codi
     return decoded_vector, demod_symbol_idxs, decoded_text
 
 if __name__ == "__main__":
-    with open(TXT_PATH, 'r') as f:
-        text = f.read()
+    text = read_simulation_text(TXT_PATH, MAX_TEXT_CHARS)
+
+    text_length = len(text)
+    print(f"Longitud del texto: {text_length}")
     
     # Given parameters
     k = 4
@@ -144,7 +167,7 @@ if __name__ == "__main__":
 
     # Vectors for performance evaluation
     EbN0_vec = np.arange(0, 11, 1)  
-    modulation_types = ["FSK"]
+    modulation_types = ["QAM","FSK"]
     M_vec = [2, 4, 8, 16]
     channel_coding = True # Set to True to enable channel coding in the performance evaluation loop
 
@@ -165,6 +188,7 @@ if __name__ == "__main__":
                 binary_vector_uncoded, _, mod_symbols_uncoded, mod_symbol_idxs_uncoded, _ = transmitter_pass(text, channel_coding=False, modulation_type=modulation_type, M=M, code_label="Binary")
 
                 # Channel effects
+                #Eb_cod = 1  * (n / k)   # Energy per bit coded
                 Eb_cod = 1  * (k / n)   # Energy per bit coded
                 Eb_uncod = 1            # Energy per bit uncoded (same as coded for fair comparison)
                 EbN0_linear = 10 ** (EbN0 / 10)  # Convert dB to linear scale
