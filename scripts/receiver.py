@@ -314,7 +314,7 @@ if __name__ == "__main__":
 
     M_VEC = [2, 4, 8, 16]        # niveles QAM a graficar
     CODE_LABEL = "Binary"        # mapeo de bits ("Binary" o "Gray")
-    EbN0_dB = 15                 # Eb/N0 para la nube de ruido
+    EbN0_dB = 10                 # Eb/N0 para la nube de ruido
     OUT_DIR = MEDIA_PATH / "constellations"
 
     with open(TXT_PATH, 'r') as f:
@@ -327,9 +327,43 @@ if __name__ == "__main__":
     binary_vector = np.array([int(bit) for symbol in codified_text for bit in symbol])
 
     N_0 = 1.0 / 10 ** (EbN0_dB / 10)   # Eb = 1  ->  N0 = 1 / (Eb/N0)
+
+    def error_mask(received, modulation_type, M, code_label, tx_idx):
+        # Simbolos que caen fuera de la region del simbolo transmitido (se
+        # demodularian mal): comparo el indice demodulado contra el transmitido.
+        _, rx_idx = demodulate_symbols(received, modulation_type, M, code_label)
+        return tx_idx != rx_idx
+
+    # ----- Solo AWGN -----
     for M in M_VEC:
-        mod_symbols, _ = modulate_symbols(binary_vector, "QAM", M, CODE_LABEL)
+        mod_symbols, tx_idx = modulate_symbols(binary_vector, "QAM", M, CODE_LABEL)
         received = channel_effects(mod_symbols, N_0, attenuation=False)
-        plot_constellation("QAM", received, M, OUT_DIR,
-                           code_label=CODE_LABEL, filename=f"qam_M{M}_received.png")
-        print(f"QAM M={M}: constelacion recibida ({EbN0_dB} dB) -> {OUT_DIR / f'qam_M{M}_received.png'}")
+        mask = error_mask(received, "QAM", M, CODE_LABEL, tx_idx)
+        plot_constellation("QAM", received, M, OUT_DIR, code_label=CODE_LABEL,
+                           filename=f"qam_M{M}_received.png", error_mask=mask)
+        print(f"QAM M={M}: constelacion recibida ({EbN0_dB} dB, {mask.sum()} err) -> {OUT_DIR / f'qam_M{M}_received.png'}")
+
+    # Solo FSK M=2 es representable en el plano (2 dimensiones ortogonales).
+    mod_symbols, tx_idx = modulate_symbols(binary_vector, "FSK", 2, "Binary")
+    received = channel_effects(mod_symbols, N_0, attenuation=False)
+    mask = error_mask(received, "FSK", 2, "Binary", tx_idx)
+    plot_constellation("FSK", received, 2, OUT_DIR, code_label="Binary",
+                       filename="fsk_M2_received.png", error_mask=mask)
+    print(f"FSK M=2: constelacion recibida ({EbN0_dB} dB, {mask.sum()} err) -> {OUT_DIR / 'fsk_M2_received.png'}")
+
+    # ----- Con atenuacion aleatoria del canal (uniforme en [0.5, 0.9]) ademas del
+    # AWGN. Los puntos se corren radialmente hacia el origen. -----
+    for M in M_VEC:
+        mod_symbols, tx_idx = modulate_symbols(binary_vector, "QAM", M, CODE_LABEL)
+        received = channel_effects(mod_symbols, N_0, attenuation=True)
+        mask = error_mask(received, "QAM", M, CODE_LABEL, tx_idx)
+        plot_constellation("QAM", received, M, OUT_DIR, code_label=CODE_LABEL,
+                           filename=f"qam_M{M}_received_atten.png", error_mask=mask)
+        print(f"QAM M={M}: constelacion recibida con atenuacion ({EbN0_dB} dB, {mask.sum()} err) -> {OUT_DIR / f'qam_M{M}_received_atten.png'}")
+
+    mod_symbols, tx_idx = modulate_symbols(binary_vector, "FSK", 2, "Binary")
+    received = channel_effects(mod_symbols, N_0, attenuation=True)
+    mask = error_mask(received, "FSK", 2, "Binary", tx_idx)
+    plot_constellation("FSK", received, 2, OUT_DIR, code_label="Binary",
+                       filename="fsk_M2_received_atten.png", error_mask=mask)
+    print(f"FSK M=2: constelacion recibida con atenuacion ({EbN0_dB} dB, {mask.sum()} err) -> {OUT_DIR / 'fsk_M2_received_atten.png'}")

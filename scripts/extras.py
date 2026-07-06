@@ -87,7 +87,7 @@ def qam_reference(M: int, code_label: str) -> tuple:
 
     return points, labels
 
-def plot_constellation(modulation_type : str, constellation: np.array, M: int, output_dir: str, code_label: str = "Binary", filename: str = "constellation.png") -> None:
+def plot_constellation(modulation_type : str, constellation: np.array, M: int, output_dir: str, code_label: str = "Binary", filename: str = "constellation.png", error_mask=None) -> None:
     """
     Plots the constellation points and saves it as an image file. For QAM it also
     draws the minimum-distance decision regions and the bit labels of each symbol.
@@ -99,6 +99,9 @@ def plot_constellation(modulation_type : str, constellation: np.array, M: int, o
         output_dir: str, the directory where the image will be saved
         code_label: str, the type of code ("Gray" or "Binary"), used for QAM labels
         filename: str, the name of the image file (default: "constellation.png")
+        error_mask: optional boolean array of length N; points where it is True are
+                    drawn in red (received outside the decision region of the symbol
+                    that was actually transmitted, i.e. would be demodulated wrong)
     """
     supported_modulations = ["QAM", "FSK"]
     if modulation_type not in supported_modulations:
@@ -112,7 +115,22 @@ def plot_constellation(modulation_type : str, constellation: np.array, M: int, o
     ax.set_axisbelow(True)
 
     ax.grid(alpha=0.3)
-    ax.scatter(constellation[:, 0], constellation[:, 1], marker="x")
+    if error_mask is not None:
+        err = np.asarray(error_mask, dtype=bool)
+        ax.scatter(constellation[~err, 0], constellation[~err, 1], marker="x", zorder=2)
+        ax.scatter(constellation[err, 0], constellation[err, 1], marker="x",
+                   color="lightcoral", alpha=0.35, zorder=2.5, label="Fuera de su region")
+    else:
+        ax.scatter(constellation[:, 0], constellation[:, 1], marker="x", zorder=2)
+    def annotate_labels(points, labels):
+        # Boxed bit labels, offset above each point so the marker stays visible.
+        for (x, y), label in zip(points, labels):
+            ax.annotate(label, (x, y), textcoords="offset points", xytext=(0, 12),
+                        ha="center", va="center",
+                        fontsize=8, color="darkgreen", fontweight="bold", zorder=3,
+                        bbox=dict(boxstyle="round,pad=0.25", facecolor="white",
+                                  edgecolor="darkgreen", linewidth=1.2))
+
     if modulation_type == "QAM":
         ax.set_xlabel("In-phase")
         ax.set_ylabel("Quadrature")
@@ -133,20 +151,28 @@ def plot_constellation(modulation_type : str, constellation: np.array, M: int, o
         for y in bounds_Q:
             ax.axhline(y, color="red", linestyle="--", linewidth=1, alpha=0.6, zorder=1)
 
-        # Symbol labeling: annotate each reference point with its k-bit word,
-        # boxed and offset above the point so the constellation marker stays visible.
-        for (x, y), label in zip(ref_points, ref_labels):
-            ax.annotate(label, (x, y), textcoords="offset points", xytext=(0, 12),
-                        ha="center", va="center",
-                        fontsize=8, color="darkgreen", fontweight="bold", zorder=3,
-                        bbox=dict(boxstyle="round,pad=0.25", facecolor="white",
-                                  edgecolor="darkgreen", linewidth=1.2))
+        annotate_labels(ref_points, ref_labels)
 
         if len(bounds_I) or len(bounds_Q):
             ax.legend(loc="upper left", bbox_to_anchor=(0.0, -0.08), fontsize=8)
     elif modulation_type == "FSK":
         ax.set_xlabel(r"$\psi_1(t) = \sqrt{\frac{2}{T_b}} ~ \cos(\omega_1 t)$")
         ax.set_ylabel(r"$\psi_2(t) = \sqrt{\frac{2}{T_b}} ~ \cos(\omega_2 t)$")
+
+        # M=2 orthogonal FSK: symbols on each axis, Es = k*Eb = 1 (Eb = 1).
+        Es = np.log2(M)
+        ref_points = np.array([[np.sqrt(Es), 0.0], [0.0, np.sqrt(Es)]])
+        ref_labels = [np.binary_repr(i, width=int(np.log2(M))) for i in range(M)]
+
+        # Decision boundary: the receiver picks argmax(psi1, psi2), so the optimum
+        # (minimum-distance) frontier is the perpendicular bisector psi2 = psi1.
+        lo = min(constellation[:, 0].min(), constellation[:, 1].min())
+        hi = max(constellation[:, 0].max(), constellation[:, 1].max())
+        ax.plot([lo, hi], [lo, hi], color="red", linestyle="--", linewidth=1,
+                alpha=0.6, zorder=1, label="Decision region")
+
+        annotate_labels(ref_points, ref_labels)
+        ax.legend(loc="upper left", bbox_to_anchor=(0.0, -0.08), fontsize=8)
     ax.set_title(f"Constellation Diagram - {modulation_type} (M={M})")
     ax.axis('equal')
 

@@ -18,18 +18,24 @@ def awgn(shape, N_0) -> np.ndarray:
 
     return np.random.normal(mean, var, size=shape)
 
-def channel_attenuation() -> float:
+def channel_attenuation(size=None) -> np.ndarray:
     """
-    Simulates channel attenuation by generating a random attenuation factor between 0.5 and 0.9.
-    
+    Generates a random channel attenuation factor with uniform distribution
+    between 0.5 and 0.9.
+
+    Parameters:
+        size: None for a single scalar factor, or an int to get one independent
+              factor per symbol (returns an array of that length).
+
     Returns:
-        float: the attenuation factor
+        float or np.ndarray: the attenuation factor(s) in [0.5, 0.9]
     """
-    return np.random.uniform(0.5, 0.9)
+    return np.random.uniform(0.5, 0.9, size=size)
 
 def channel_effects(mod_symbols, N_0, attenuation=True) -> np.ndarray:
     """
-    Simulates the effects of the channel on the transmitted symbols by applying attenuation and adding AWGN noise.
+    Simulates the effects of the channel on the transmitted symbols by applying a
+    random attenuation (one factor per symbol) and adding AWGN noise.
 
     Parameters:
         mod_symbols: np.ndarray, the transmitted modulation symbols (shape (N, 2) for QAM or (N, M) for FSK)
@@ -39,5 +45,10 @@ def channel_effects(mod_symbols, N_0, attenuation=True) -> np.ndarray:
 
     Returns:
         np.ndarray: the received symbols after channel effects
-    """  
-    return mod_symbols + awgn(mod_symbols.shape, N_0)
+    """
+    mod_symbols = np.asarray(mod_symbols, dtype=float)
+    signal = mod_symbols
+    if attenuation:
+        a = channel_attenuation(size=mod_symbols.shape[0])  # una atenuacion por simbolo
+        signal = a[:, None] * mod_symbols
+    return signal + awgn(mod_symbols.shape, N_0)

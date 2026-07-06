@@ -348,6 +348,12 @@ if __name__ == "__main__":
         Es_hat, Eb_hat = calculate_mean_energies(mod_symbols, M)
         fsk_rows.append((M, k, Es_teo, Es_hat, Eb_teo, Eb_hat))
 
+        # Solo FSK M=2 es representable en el plano (2 dimensiones ortogonales).
+        if M == 2:
+            plot_constellation("FSK", mod_symbols, M, OUT_DIR,
+                               code_label="Binary", filename="fsk_M2_transmitted.png")
+            print(f"FSK M={M}: constelacion transmitida -> {OUT_DIR / 'fsk_M2_transmitted.png'}")
+
     def print_energy_table(title, rows):
         print(f"\nEnergia media por simbolo y por bit (teorica vs estimada) - {title}")
         print(f"{'M':>3} {'k':>3} {'Es_teo':>8} {'Es_hat':>8} {'Eb_teo':>8} {'Eb_hat':>8}")
